@@ -1,0 +1,13 @@
+﻿{
+  "name": "mplx-lsp",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vscode-languageserver": "^9.0.1"
+  }
+}
