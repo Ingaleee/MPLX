@@ -6,6 +6,18 @@
   "scripts": {
     "build": "tsc -p ."
   },
+  "contributes": {
+    "configuration": {
+      "title": "MPLX",
+      "properties": {
+        "mplx.cliPath": {
+          "type": "string",
+          "default": "build/dev/src-cpp/tools/mplx/mplx",
+          "description": "Path to mplx CLI executable"
+        }
+      }
+    }
+  },
   "devDependencies": {
     "typescript": "^5.4.0",
     "vscode-languageserver": "^9.0.1"
