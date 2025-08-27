@@ -37,7 +37,7 @@ void Compiler::compileExpr(const Expr* e){
     compileExpr(b->rhs.get());
     const std::string& op=b->op;
     if(op=="+") emit_u8(OP_ADD); else if(op=="-") emit_u8(OP_SUB); else if(op=="*") emit_u8(OP_MUL); else if(op=="/") emit_u8(OP_DIV);
-    else if(op=="==") emit_u8(OP_EQ); else if(op!="=" && op=="!=") emit_u8(OP_NE);
+    else if(op=="==") emit_u8(OP_EQ); else if(op=="!=") emit_u8(OP_NE);
     else if(op=="<") emit_u8(OP_LT); else if(op=="<=") emit_u8(OP_LE); else if(op==">") emit_u8(OP_GT); else if(op==">=") emit_u8(OP_GE);
     else if(op=="!=") emit_u8(OP_NE);
     else diags_.push_back("unsupported binary op: "+op);
