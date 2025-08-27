@@ -47,12 +47,35 @@ int main(int argc, char** argv){
 
   if(mode == "--check"){
     json j; j["diagnostics"] = json::array();
-    for(const auto& d : ps.diagnostics()) j["diagnostics"].push_back(d);
+    auto push_diag = [&](const std::string& msg){
+      std::size_t l=0,c=0; // default 0-based for editor, but store 1-based
+      // parse prefix like "[line 12:34] ..."
+      if(msg.size()>8 && msg[0]=='['){
+        // naive scan
+        auto p = msg.find("line ");
+        auto q = msg.find(":", p==std::string::npos?0:p+5);
+        auto r = msg.find("]", q==std::string::npos?0:q+1);
+        if(p!=std::string::npos && q!=std::string::npos){
+          try{
+            l = std::stoul(msg.substr(p+5, q-(p+5)));
+            if(r!=std::string::npos) c = std::stoul(msg.substr(q+1, r-(q+1)));
+          } catch(...){ l=0; c=0; }
+        }
+      }
+      // strip bracketed prefix for clean message
+      std::string clean = msg;
+      if(!msg.empty() && msg[0]=='['){
+        auto rb = msg.find(']');
+        if(rb!=std::string::npos && rb+2<=msg.size()) clean = msg.substr(rb+2);
+      }
+      j["diagnostics"].push_back({ {"message", clean}, {"line", l}, {"col", c} });
+    };
+    for(const auto& d : ps.diagnostics()) push_diag(d);
     // compile too, to catch codegen-level issues
     if(ps.diagnostics().empty()){
       mplx::Compiler c;
       auto res = c.compile(mod);
-      for(const auto& d : res.diags) j["diagnostics"].push_back(d);
+      for(const auto& d : res.diags) push_diag(d);
     }
     fmt::print("{}\n", j.dump());
     return j["diagnostics"].empty() ? 0 : 1;

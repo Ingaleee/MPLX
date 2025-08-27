@@ -40,7 +40,7 @@ documents.onDidChangeContent(change => {
   cli.stderr.on("data", d => err += d.toString());
   cli.on("close", (_code) => {
     let diags: Diagnostic[] = [];
-    const toRange = (s: string) => {
+    const toRangeLegacy = (s: string) => {
       const m = s.match(/^\[line\s+(\d+):(\d+)\]/);
       if (m) {
         const line = Math.max(0, parseInt(m[1], 10) - 1);
@@ -51,24 +51,21 @@ documents.onDidChangeContent(change => {
     };
     try{
       const j = JSON.parse(out);
-      for (const msg of (j.diagnostics ?? [])){
-        const m = msg.toString();
-        diags.push({
-          message: m,
-          range: toRange(m),
-          severity: DiagnosticSeverity.Error,
-          source: "mplx"
-        });
+      for (const d of (j.diagnostics ?? [])){
+        if (typeof d === 'string'){
+          const m = String(d);
+          diags.push({ message: m, range: toRangeLegacy(m), severity: DiagnosticSeverity.Error, source: "mplx" });
+        } else {
+          const msg = String(d.message ?? "error");
+          const line = Math.max(0, (Number(d.line) || 1) - 1);
+          const col  = Math.max(0, (Number(d.col)  || 1) - 1);
+          diags.push({ message: msg, range: { start: { line, character: col }, end: { line, character: col+1 } }, severity: DiagnosticSeverity.Error, source: "mplx" });
+        }
       }
     } catch {
       if (err.trim().length){
         const m = err.trim();
-        diags.push({
-          message: m,
-          range: toRange(m),
-          severity: DiagnosticSeverity.Error,
-          source: "mplx"
-        });
+        diags.push({ message: m, range: toRangeLegacy(m), severity: DiagnosticSeverity.Error, source: "mplx" });
       }
     }
     connection.sendDiagnostics({ uri, diagnostics: diags });
