@@ -21,5 +21,22 @@ static void BM_CompileAndRun(benchmark::State& state) {
 
 BENCHMARK(BM_CompileAndRun);
 
+static void BM_RunOnly(benchmark::State& state) {
+  const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
+  mplx::Lexer lx(src);
+  auto toks = lx.Lex();
+  mplx::Parser ps(std::move(toks));
+  auto mod = ps.parse();
+  mplx::Compiler c;
+  auto res = c.compile(mod);
+  mplx::VM vm(res.bc);
+  for (auto _ : state) {
+    auto v = vm.run("main");
+    benchmark::DoNotOptimize(v);
+  }
+}
+
+BENCHMARK(BM_RunOnly);
+
 BENCHMARK_MAIN();
 
