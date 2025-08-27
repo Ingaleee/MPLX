@@ -16,3 +16,6 @@ add_subdirectory(src-cpp/tools/mplx-netclient)
 add_subdirectory(src-cpp/mplx-pkg)
 
 add_subdirectory(src-cpp/mplx-capi)
+
+# Clean Architecture aggregate targets
+add_subdirectory(architecture)
