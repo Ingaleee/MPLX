@@ -1,7 +1,7 @@
 ﻿import {
   createConnection, ProposedFeatures,
   InitializeParams, TextDocuments, TextDocumentSyncKind,
-  Diagnostic, DiagnosticSeverity
+  Diagnostic, DiagnosticSeverity, Hover, MarkupKind
 } from "vscode-languageserver/node.js";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { spawn } from "node:child_process";
@@ -12,8 +12,14 @@ import { join } from "node:path";
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-connection.onInitialize((_params: InitializeParams) => {
-  return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental } };
+let cliPathConfig: string | undefined;
+
+connection.onInitialize((params: InitializeParams) => {
+  const init = (params.initializationOptions as any) || {};
+  if (typeof init.cliPath === 'string' && init.cliPath.length) {
+    cliPathConfig = init.cliPath as string;
+  }
+  return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental, hoverProvider: true } };
 });
 
 documents.onDidChangeContent(change => {
@@ -24,7 +30,7 @@ documents.onDidChangeContent(change => {
   const p = join(tmpdir(), "mplx_" + Math.random().toString(36).slice(2) + ".mplx");
   writeFileSync(p, text, "utf8");
 
-  const binFromEnv = process.env.MPLX_CLI && process.env.MPLX_CLI.length ? process.env.MPLX_CLI : undefined;
+  const binFromEnv = cliPathConfig ?? (process.env.MPLX_CLI && process.env.MPLX_CLI.length ? process.env.MPLX_CLI : undefined);
   const defaultWin = "build\\dev\\src-cpp\\tools\\mplx\\mplx.exe";
   const defaultNix = "build/dev/src-cpp/tools/mplx/mplx";
   const cliPath = binFromEnv ?? (process.platform === 'win32' ? defaultWin : defaultNix);
@@ -67,6 +73,17 @@ documents.onDidChangeContent(change => {
     }
     connection.sendDiagnostics({ uri, diagnostics: diags });
   });
+});
+
+connection.onHover(async (params): Promise<Hover | null> => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) return null;
+  // naive symbol extraction: list top-level fn names
+  const text = doc.getText();
+  const fnMatches = Array.from(text.matchAll(/\bfn\s+([A-Za-z_][A-Za-z0-9_]*)/g)).map(m => m[1]);
+  if (!fnMatches.length) return null;
+  const md = fnMatches.map(n => `- \`${n}(…)\``).join("\n");
+  return { contents: { kind: MarkupKind.Markdown, value: `**Functions**\n${md}` } };
 });
 
 documents.listen(connection);
