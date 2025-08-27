@@ -38,8 +38,11 @@ public:
   bool step() { int rc = sqlite3_step(stmt_); return rc == SQLITE_ROW; }
   void reset() { sqlite3_reset(stmt_); }
   void bind_int(int idx, int v) { sqlite3_bind_int(stmt_, idx, v); }
+  void bind_int64(int idx, long long v) { sqlite3_bind_int64(stmt_, idx, v); }
+  void bind_text(int idx, const std::string& v) { sqlite3_bind_text(stmt_, idx, v.c_str(), -1, SQLITE_TRANSIENT); }
   int column_int(int i) const { return sqlite3_column_int(stmt_, i); }
-  const unsigned char* column_text(int i) const { return sqlite3_column_text(stmt_, i); }
+  long long column_int64(int i) const { return sqlite3_column_int64(stmt_, i); }
+  std::string column_text_str(int i) const { auto p = reinterpret_cast<const char*>(sqlite3_column_text(stmt_, i)); return p ? std::string(p) : std::string(); }
 
 private:
   sqlite3* db_{};
