@@ -24,28 +24,42 @@ documents.onDidChangeContent(change => {
   const p = join(tmpdir(), "mplx_" + Math.random().toString(36).slice(2) + ".mplx");
   writeFileSync(p, text, "utf8");
 
-  const cli = spawn("build/dev/src-cpp/tools/mplx/mplx", ["--check", p], { shell: true });
+  const binFromEnv = process.env.MPLX_CLI && process.env.MPLX_CLI.length ? process.env.MPLX_CLI : undefined;
+  const defaultWin = "build\\dev\\src-cpp\\tools\\mplx\\mplx.exe";
+  const defaultNix = "build/dev/src-cpp/tools/mplx/mplx";
+  const cliPath = binFromEnv ?? (process.platform === 'win32' ? defaultWin : defaultNix);
+  const cli = spawn(cliPath, ["--check", p], { shell: true });
   let out = ""; let err = "";
   cli.stdout.on("data", d => out += d.toString());
   cli.stderr.on("data", d => err += d.toString());
   cli.on("close", (_code) => {
     let diags: Diagnostic[] = [];
+    const toRange = (s: string) => {
+      const m = s.match(/^\[line\s+(\d+):(\d+)\]/);
+      if (m) {
+        const line = Math.max(0, parseInt(m[1], 10) - 1);
+        const ch = Math.max(0, parseInt(m[2], 10) - 1);
+        return { start: { line, character: ch }, end: { line, character: ch + 1 } };
+      }
+      return { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } };
+    };
     try{
       const j = JSON.parse(out);
       for (const msg of (j.diagnostics ?? [])){
-        // Сѓ РЅР°СЃ СЃРµР№С‡Р°СЃ С‚РѕР»СЊРєРѕ С‚РµРєСЃС‚, Р±РµР· С‚РѕС‡РЅС‹С… РїРѕР·РёС†РёР№ вЂ” РєР»Р°РґС‘Рј РІ (0,0)
+        const m = msg.toString();
         diags.push({
-          message: msg.toString(),
-          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
+          message: m,
+          range: toRange(m),
           severity: DiagnosticSeverity.Error,
           source: "mplx"
         });
       }
     } catch {
       if (err.trim().length){
+        const m = err.trim();
         diags.push({
-          message: err.trim(),
-          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
+          message: m,
+          range: toRange(m),
           severity: DiagnosticSeverity.Error,
           source: "mplx"
         });
