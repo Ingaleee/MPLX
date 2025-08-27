@@ -75,12 +75,21 @@ documents.onDidChangeContent(change => {
 connection.onHover(async (params): Promise<Hover | null> => {
   const doc = documents.get(params.textDocument.uri);
   if (!doc) return null;
-  // naive symbol extraction: list top-level fn names
-  const text = doc.getText();
-  const fnMatches = Array.from(text.matchAll(/\bfn\s+([A-Za-z_][A-Za-z0-9_]*)/g)).map(m => m[1]);
-  if (!fnMatches.length) return null;
-  const md = fnMatches.map(n => `- \`${n}(…)\``).join("\n");
-  return { contents: { kind: MarkupKind.Markdown, value: `**Functions**\n${md}` } };
+  const p = join(tmpdir(), "mplx_" + Math.random().toString(36).slice(2) + ".mplx");
+  writeFileSync(p, doc.getText(), "utf8");
+  const binFromEnv = cliPathConfig ?? (process.env.MPLX_CLI && process.env.MPLX_CLI.length ? process.env.MPLX_CLI : undefined);
+  const defaultWin = "build\\dev\\src-cpp\\tools\\mplx\\mplx.exe";
+  const defaultNix = "build/dev/src-cpp/tools/mplx/mplx";
+  const cliPath = binFromEnv ?? (process.platform === 'win32' ? defaultWin : defaultNix);
+  const cli = spawn(cliPath, ["--symbols", p], { shell: true });
+  let out = "";
+  cli.stdout.on("data", d => out += d.toString());
+  await new Promise<void>(resolve => cli.on("close", () => resolve()));
+  try{
+    const j = JSON.parse(out);
+    const md = (j.functions ?? []).map((f: any) => `- \`${String(f.name)}(${new Array(Number(f.arity)||0).fill("…").join(", ")})\``).join("\n");
+    return { contents: { kind: MarkupKind.Markdown, value: `**Functions**\n${md}` } };
+  } catch { return null; }
 });
 
 documents.listen(connection);
