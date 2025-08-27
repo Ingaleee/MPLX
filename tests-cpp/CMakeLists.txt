@@ -1,5 +1,6 @@
 ﻿add_executable(mplx-tests
   lexer_tests.cpp
+  parser_smoke.cpp
 )
 
 find_package(GTest CONFIG REQUIRED)
