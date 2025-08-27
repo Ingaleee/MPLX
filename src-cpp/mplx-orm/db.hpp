@@ -51,4 +51,17 @@ private:
 
 } // namespace mplx::orm
 
+namespace mplx::orm {
+
+template <class RowFn>
+inline void query(Db& db, const std::string& sql, RowFn&& on_row) {
+  Stmt st(db.handle(), sql);
+  while (st.step()) {
+    on_row(st);
+  }
+  st.reset();
+}
+
+} // namespace mplx::orm
+
 

@@ -3,6 +3,7 @@
   parser_smoke.cpp
   parser_errors.cpp
   orm_smoke.cpp
+  orm_crud.cpp
 )
 
 find_package(GTest CONFIG REQUIRED)
