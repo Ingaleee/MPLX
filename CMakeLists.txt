@@ -8,13 +8,12 @@ add_subdirectory(Application/mplx-compiler)
 add_subdirectory(Application/mplx-vm)
 add_subdirectory(Presentation/tools/mplx)
 add_subdirectory(Presentation/tests-cpp)
-add_subdirectory(src-cpp/mplx-orm)
+add_subdirectory(Infrastructure/mplx-orm)
 add_subdirectory(Presentation/benchmarks-cpp)
 add_subdirectory(Infrastructure/mplx-net)
 add_subdirectory(Presentation/tools/mplx-net)
-add_subdirectory(src-cpp/tools/mplx-netclient)
+add_subdirectory(Presentation/tools/mplx-netclient)
 add_subdirectory(Infrastructure/mplx-pkg)
-
 add_subdirectory(Infrastructure/mplx-capi)
 
 # Clean Architecture aggregate targets
