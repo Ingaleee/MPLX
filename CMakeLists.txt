@@ -12,6 +12,7 @@ add_subdirectory(src-cpp/mplx-orm)
 add_subdirectory(benchmarks-cpp)
 add_subdirectory(src-cpp/mplx-net)
 add_subdirectory(src-cpp/tools/mplx-net)
+add_subdirectory(src-cpp/tools/mplx-netclient)
 add_subdirectory(src-cpp/mplx-pkg)
 
 add_subdirectory(src-cpp/mplx-capi)
