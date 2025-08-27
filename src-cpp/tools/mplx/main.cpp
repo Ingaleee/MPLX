@@ -13,8 +13,16 @@ int main(int argc, char** argv){
   std::string fileArg;
   std::string src;
 
+  auto print_usage = [](){
+    fmt::print("Usage: mplx [--run|--check] <file>\n");
+  };
+
   if(argc >= 2) mode = argv[1];
+  if(mode == "--help" || argc < 2){ print_usage(); return 0; }
+  if(mode == "--version"){ fmt::print("mplx 0.1.1\n"); return 0; }
   if((mode == "--run" || mode == "--check") && argc >= 3) fileArg = argv[2];
+  if((mode == "--run" || mode == "--check") && fileArg.empty()){ print_usage(); return 2; }
+  if(!(mode == "--run" || mode == "--check")) { print_usage(); return 2; }
 
   if(mode == "--run" || mode == "--check"){
     std::ifstream ifs(fileArg);
