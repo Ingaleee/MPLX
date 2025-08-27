@@ -1,0 +1,15 @@
+﻿build/
+.vs/
+.vscode/
+CMakeSettings.json
+CMakeUserPresets.json
+**/*.user
+**/*.suo
+# Node
+node_modules/
+.pnpm-store/
+# Logs
+*.log
+# OS
+.DS_Store
+Thumbs.db

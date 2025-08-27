@@ -1,0 +1,10 @@
+﻿cmake_minimum_required(VERSION 3.26)
+project(mplx LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_subdirectory(src-cpp/mplx-lang)
+add_subdirectory(src-cpp/mplx-compiler)
+add_subdirectory(src-cpp/mplx-vm)
+add_subdirectory(src-cpp/tools/mplx)
+add_subdirectory(tests-cpp)
