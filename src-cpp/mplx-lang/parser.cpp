@@ -24,7 +24,10 @@ Function Parser::parseFunction(){
   if(!match(TokenKind::Arrow)) error_here("expected '->'");
   std::string retType = check(TokenKind::Identifier)? advance().lexeme : "i32";
   if(!match(TokenKind::LBrace)) error_here("expected '{'");
-  Function f{.name=name,.params=params,.returnType=retType};
+  Function f;
+f.name = name;
+f.params = params;
+f.returnType = retType;
   while(!check(TokenKind::RBrace) && !is_at_end()){
     auto s = parseStmt();
     if(s) f.body.push_back(std::move(s));
