@@ -6,6 +6,7 @@
     "nlohmann-json",
     "gtest",
     "asio",
-    "sqlite3"
+    "sqlite3",
+    "benchmark"
   ]
 }
