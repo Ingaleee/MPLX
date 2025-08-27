@@ -22,6 +22,9 @@ public:
       throw std::runtime_error(msg);
     }
   }
+  void begin() { exec("BEGIN"); }
+  void commit() { exec("COMMIT"); }
+  void rollback() { exec("ROLLBACK"); }
 private:
   sqlite3* db_{};
 };

@@ -1,7 +1,7 @@
-﻿#include "../../mplx-lang/lexer.hpp"
-#include "../../mplx-lang/parser.hpp"
-#include "../../mplx-compiler/compiler.hpp"
-#include "../../mplx-vm/vm.hpp"
+﻿#include "../../../Domain/mplx-lang/lexer.hpp"
+#include "../../../Domain/mplx-lang/parser.hpp"
+#include "../../../Application/mplx-compiler/compiler.hpp"
+#include "../../../Application/mplx-vm/vm.hpp"
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 #include <fstream>
