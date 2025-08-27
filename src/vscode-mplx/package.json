@@ -1,0 +1,25 @@
+﻿{
+  "name": "mplx",
+  "displayName": "MPLX Language",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.87.0" },
+  "publisher": "you",
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:mplx"],
+  "main": "dist/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "mplx",
+      "extensions": [".mplx"],
+      "aliases": ["MPLX"],
+      "configuration": "./language-configuration.json"
+    }]
+  },
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vscode": "^1.1.37"
+  }
+}
