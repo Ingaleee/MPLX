@@ -38,5 +38,20 @@ static void BM_RunOnly(benchmark::State& state) {
 
 BENCHMARK(BM_RunOnly);
 
+static void BM_CompileOnly(benchmark::State& state) {
+  const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
+  for (auto _ : state) {
+    mplx::Lexer lx(src);
+    auto toks = lx.Lex();
+    mplx::Parser ps(std::move(toks));
+    auto mod = ps.parse();
+    mplx::Compiler c;
+    auto res = c.compile(mod);
+    benchmark::DoNotOptimize(res.bc.consts.size());
+  }
+}
+
+BENCHMARK(BM_CompileOnly);
+
 BENCHMARK_MAIN();
 
