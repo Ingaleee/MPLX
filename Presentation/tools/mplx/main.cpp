@@ -91,12 +91,16 @@ int main(int argc, char** argv){
   }
 
   if(mode == "--dump"){
+    // print AST and bytecode (JSON)
     json out; out["ast"] = json::object(); out["ast"]["functions"] = json::array();
     for(const auto& f : mod.functions){
       json fn; fn["name"] = f.name; fn["params"] = json::array();
       for(const auto& p : f.params){ fn["params"].push_back(p.name); }
       out["ast"]["functions"].push_back(fn);
     }
+    mplx::Compiler c; auto res = c.compile(mod);
+    out["bytecode"] = nlohmann::json::parse(mplx::dump_bytecode_json(res.bc));
+    out["cfg"] = nlohmann::json::parse(mplx::dump_cfg_json(res.bc));
     fmt::print("{}\n", out.dump());
     return 0;
   }
