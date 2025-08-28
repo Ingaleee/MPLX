@@ -61,6 +61,7 @@ class EchoServer {
 public:
   EchoServer(asio::io_context& io, const std::string& host, uint16_t port)
     : acceptor_(io, asio::ip::tcp::endpoint(asio::ip::make_address(host), port)) {}
+  static Frame Ping(){ Frame f; f.msgType=9; f.payload={'P','I','N','G'}; return f; }
 
   void Start(){
     do_accept();

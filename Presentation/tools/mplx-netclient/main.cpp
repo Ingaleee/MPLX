@@ -14,19 +14,22 @@ static std::vector<uint8_t> parse_hex(const std::string& s){
 }
 
 int main(int argc, char** argv){
-  if (argc < 5){
-    std::cerr << "Usage: mplx-netclient --send <host> <port> <hexpayload>\n";
+  if (argc < 4){
+    std::cerr << "Usage: mplx-netclient --ping <host> <port>\n"
+                 "       mplx-netclient --send <host> <port> <hexpayload>\n";
     return 2;
   }
   std::string mode = argv[1], host=argv[2]; uint16_t port = (uint16_t)std::stoi(argv[3]);
-  if (mode != std::string("--send")) { std::cerr << "Unknown mode\n"; return 2; }
-  std::string hex = argv[4];
+  std::string hex = argc>4? argv[4] : "";
 
   try{
     asio::io_context io;
     asio::ip::tcp::socket sock(io);
     sock.connect({asio::ip::make_address(host), port});
-    mplx::net::Frame f; f.msgType=0; f.payload = parse_hex(hex);
+    mplx::net::Frame f;
+    if (mode == std::string("--ping")) { f = mplx::net::EchoServer::Ping(); }
+    else if (mode == std::string("--send")) { f.msgType=0; f.payload = parse_hex(hex); }
+    else { std::cerr << "Unknown mode\n"; return 2; }
     asio::error_code ec;
     mplx::net::write_frame(sock, f, ec);
     if (ec) { std::cerr << "write error: " << ec.message() << "\n"; return 1; }
