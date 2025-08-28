@@ -14,15 +14,15 @@ int main(int argc, char** argv){
   std::string src;
 
   auto print_usage = [](){
-    fmt::print("Usage: mplx [--run|--check|--symbols] <file>\n");
+    fmt::print("Usage: mplx [--run|--check|--symbols|--dump] <file>\n");
   };
 
   if(argc >= 2) mode = argv[1];
   if(mode == "--help" || argc < 2){ print_usage(); return 0; }
   if(mode == "--version"){ fmt::print("mplx 0.1.1\n"); return 0; }
-  if((mode == "--run" || mode == "--check" || mode == "--symbols") && argc >= 3) fileArg = argv[2];
-  if((mode == "--run" || mode == "--check" || mode == "--symbols") && fileArg.empty()){ print_usage(); return 2; }
-  if(!(mode == "--run" || mode == "--check" || mode == "--symbols")) { print_usage(); return 2; }
+  if((mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump") && argc >= 3) fileArg = argv[2];
+  if((mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump") && fileArg.empty()){ print_usage(); return 2; }
+  if(!(mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump")) { print_usage(); return 2; }
 
   if(mode == "--run" || mode == "--check" || mode == "--symbols"){
     std::ifstream ifs(fileArg);
@@ -85,6 +85,17 @@ int main(int argc, char** argv){
     json out; out["functions"] = json::array();
     for(const auto& f : mod.functions){
       out["functions"].push_back({ {"name", f.name}, {"arity", (int)f.params.size()} });
+    }
+    fmt::print("{}\n", out.dump());
+    return 0;
+  }
+
+  if(mode == "--dump"){
+    json out; out["ast"] = json::object(); out["ast"]["functions"] = json::array();
+    for(const auto& f : mod.functions){
+      json fn; fn["name"] = f.name; fn["params"] = json::array();
+      for(const auto& p : f.params){ fn["params"].push_back(p.name); }
+      out["ast"]["functions"].push_back(fn);
     }
     fmt::print("{}\n", out.dump());
     return 0;
