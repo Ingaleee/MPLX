@@ -6,13 +6,14 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: any = new (TextDocuments as any)(TextDocument);
 
 let cliPathConfig: string | undefined;
+let workspaceRoots: string[] = [];
 
 function wordAt(doc: any, pos: Position): { word: string, range: Range } | null {
   const text = doc.getText();
@@ -35,7 +36,18 @@ connection.onInitialize((params: any) => {
   if (typeof init.cliPath === 'string' && init.cliPath.length) {
     cliPathConfig = init.cliPath as string;
   }
-  return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental, hoverProvider: true, definitionProvider: true, signatureHelpProvider: { triggerCharacters: ["(", ","] } } };
+  if (Array.isArray(params.workspaceFolders)){
+    try {
+      workspaceRoots = params.workspaceFolders.map((f: any) => {
+        const u: string = String(f.uri || "");
+        if (u.startsWith("file://")){
+          return decodeURIComponent(u.replace(/^file:\/\//, ""));
+        }
+        return u;
+      });
+    } catch { workspaceRoots = []; }
+  }
+  return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental, hoverProvider: true, definitionProvider: true, signatureHelpProvider: { triggerCharacters: ["(", ","] }, referencesProvider: true, renameProvider: { prepareProvider: true } } };
 });
 
 documents.onDidChangeContent((change: any) => {
@@ -186,6 +198,68 @@ connection.onRenameRequest((params: any): any => {
     if (edits.length) workEdit.changes[d.uri] = edits;
   }
   return workEdit;
+});
+
+// References: scan open documents plus simple FS scan under workspace roots (depth-limited)
+connection.onReferences((params: any): any => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) return [];
+  const w = wordAt(doc, params.position);
+  if (!w) return [];
+  const rx = new RegExp("\\b" + w.word + "\\b", "g");
+  const out: any[] = [];
+  // open docs
+  const allDocs = (documents as any).all ? (documents as any).all() : [doc];
+  for (const d of allDocs){
+    const text = d.getText(); let m: RegExpExecArray | null;
+    while ((m = rx.exec(text))){
+      const start = d.positionAt(m.index);
+      const end = d.positionAt(m.index + w.word.length);
+      out.push({ uri: d.uri, range: { start, end } });
+    }
+  }
+  // FS scan (best-effort)
+  const files: string[] = [];
+  const maxDepth = 3;
+  const list = (root: string, depth: number) => {
+    if (depth <= 0) return;
+    let ents: string[] = [];
+    try { ents = readdirSync(root); } catch { return; }
+    for (const e of ents){
+      if (e === ".git" || e === "node_modules" || e === "build" || e === ".vs" || e === ".vscode") continue;
+      const full = join(root, e);
+      let st: any; try { st = statSync(full); } catch { continue; }
+      if (st.isDirectory()) list(full, depth - 1);
+      else if (e.endsWith(".mplx")) files.push(full);
+    }
+  };
+  for (const r of workspaceRoots){ list(r, maxDepth); }
+  for (const p of files){
+    try{
+      const txt = readFileSync(p, "utf8");
+      // pseudo-doc
+      const lineStarts: number[] = [0];
+      for (let i=0;i<txt.length;i++){ if (txt[i]==='\n') lineStarts.push(i+1); }
+      const posAt = (offset: number) => {
+        if (offset < 0) offset = 0; if (offset > txt.length) offset = txt.length;
+        let low = 0, high = lineStarts.length - 1;
+        while (low <= high){
+          const mid = (low + high) >> 1;
+          const start = lineStarts[mid];
+          const next = mid+1 < lineStarts.length ? lineStarts[mid+1] : txt.length+1;
+          if (offset < start) high = mid - 1; else if (offset >= next) low = mid + 1; else return { line: mid, character: offset - start } as any;
+        }
+        return { line: 0, character: offset } as any;
+      };
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(txt))){
+        const start = posAt(m.index);
+        const end = { line: start.line, character: start.character + w.word.length } as any;
+        out.push({ uri: "file://" + p, range: { start, end } });
+      }
+    } catch {}
+  }
+  return out;
 });
 
 documents.listen(connection);
