@@ -14,6 +14,22 @@ const documents: any = new (TextDocuments as any)(TextDocument);
 
 let cliPathConfig: string | undefined;
 
+function wordAt(doc: any, pos: Position): { word: string, range: Range } | null {
+  const text = doc.getText();
+  const off = doc.offsetAt(pos);
+  const re = /[A-Za-z_][A-Za-z0-9_]*/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))){
+    const s = m.index, e = s + m[0].length;
+    if (off >= s && off <= e){
+      const start = doc.positionAt(s);
+      const end = doc.positionAt(e);
+      return { word: m[0], range: { start, end } };
+    }
+  }
+  return null;
+}
+
 connection.onInitialize((params: any) => {
   const init = (params.initializationOptions as any) || {};
   if (typeof init.cliPath === 'string' && init.cliPath.length) {
@@ -135,6 +151,41 @@ connection.onDefinition(async (params: any) => {
   const range: any = { start: pos, end: { line: pos.line, character: pos.character + word.length } };
   const loc: any = { uri: params.textDocument.uri, range };
   return [loc];
+});
+
+// PrepareRename: return the range of the identifier under cursor if any
+connection.onPrepareRename((params: any): any => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) return null;
+  const w = wordAt(doc, params.position);
+  if (!w) return null;
+  return w.range;
+});
+
+// Rename: apply across all open documents (workspace-open scope)
+connection.onRenameRequest((params: any): any => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) return null;
+  const w = wordAt(doc, params.position);
+  if (!w) return null;
+  const newName: string = String(params.newName || "");
+  if (!newName.match(/^[A-Za-z_][A-Za-z0-9_]*$/)) return null;
+
+  const workEdit: any = { changes: {} };
+  const allDocs = (documents as any).all ? (documents as any).all() : [doc];
+  const rx = new RegExp("\\b" + w.word + "\\b", "g");
+  for (const d of allDocs){
+    const text = d.getText();
+    let m: RegExpExecArray | null;
+    const edits: any[] = [];
+    while ((m = rx.exec(text))){
+      const start = d.positionAt(m.index);
+      const end = d.positionAt(m.index + w.word.length);
+      edits.push({ range: { start, end }, newText: newName });
+    }
+    if (edits.length) workEdit.changes[d.uri] = edits;
+  }
+  return workEdit;
 });
 
 documents.listen(connection);
