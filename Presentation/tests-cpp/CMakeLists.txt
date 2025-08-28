@@ -5,6 +5,7 @@
   orm_smoke.cpp
   orm_crud.cpp
   orm_tx.cpp
+  optimizer_fold.cpp
 )
 
 find_package(GTest CONFIG REQUIRED)
