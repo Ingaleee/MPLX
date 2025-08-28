@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <chrono>
 
 namespace mplx::net {
 
@@ -56,12 +57,15 @@ inline bool read_frame(asio::ip::tcp::socket& sock, Frame& f, asio::error_code& 
   return true;
 }
 
-// Simple echo server; msgType ignored, payload echoed back with msgType=1
+// Message types
+// 0x00 echo, 0x01 PING -> 0x81 {ok:true,service,version}, 0x02 HEALTH -> 0x82 {ok:true,service,version,uptime_sec}
+
 class EchoServer {
 public:
   EchoServer(asio::io_context& io, const std::string& host, uint16_t port)
-    : acceptor_(io, asio::ip::tcp::endpoint(asio::ip::make_address(host), port)) {}
-  static Frame Ping(){ Frame f; f.msgType=9; f.payload={'P','I','N','G'}; return f; }
+    : acceptor_(io, asio::ip::tcp::endpoint(asio::ip::make_address(host), port)),
+      start_(std::chrono::steady_clock::now()) {}
+  static Frame Ping(){ Frame f; f.msgType=0x01; return f; }
 
   void Start(){
     do_accept();
@@ -77,13 +81,27 @@ private:
   void do_session(std::shared_ptr<asio::ip::tcp::socket> sock){
     auto self = sock;
     asio::co_spawn(acceptor_.get_executor(),
-      [self]() -> asio::awaitable<void> {
+      [this, self]() -> asio::awaitable<void> {
         asio::error_code ec;
         try{
           for(;;){
             Frame f;
             if (!read_frame(*self, f, ec)) break;
-            Frame out{1, f.payload};
+            Frame out;
+            if (f.msgType == 0x01){
+              // PING
+              std::string payload = "{\"ok\":true,\"service\":\"mplx\",\"version\":\"0.2.0\"}";
+              out.msgType = 0x81; out.payload.assign(payload.begin(), payload.end());
+            } else if (f.msgType == 0x02){
+              // HEALTH
+              using namespace std::chrono;
+              auto secs = duration_cast<seconds>(steady_clock::now() - start_).count();
+              std::string payload = std::string("{\"ok\":true,\"service\":\"mplx\",\"version\":\"0.2.0\",\"uptime_sec\":") + std::to_string(secs) + "}";
+              out.msgType = 0x82; out.payload.assign(payload.begin(), payload.end());
+            } else {
+              // echo
+              out.msgType = 0x80; out.payload = f.payload;
+            }
             write_frame(*self, out, ec);
             if (ec) break;
           }
@@ -94,6 +112,7 @@ private:
   }
 
   asio::ip::tcp::acceptor acceptor_;
+  std::chrono::steady_clock::time_point start_;
 };
 
 } // namespace mplx::net
