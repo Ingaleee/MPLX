@@ -1,13 +1,24 @@
 ﻿import {
   createConnection, ProposedFeatures,
   InitializeParams, TextDocuments, TextDocumentSyncKind,
-  Diagnostic, DiagnosticSeverity, Hover, MarkupKind, Location, Position, Range, SignatureHelp, SignatureInformation, ParameterInformation
+  Diagnostic, DiagnosticSeverity, Hover, MarkupKind, Location, SignatureHelp, SignatureInformation, ParameterInformation
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+// Define types locally to avoid import issues
+interface Position {
+  line: number;
+  character: number;
+}
+
+interface Range {
+  start: Position;
+  end: Position;
+}
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: any = new (TextDocuments as any)(TextDocument);

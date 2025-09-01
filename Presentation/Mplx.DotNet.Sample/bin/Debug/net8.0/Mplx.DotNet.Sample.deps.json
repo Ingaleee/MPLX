@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Mplx.DotNet.Sample/1.0.0": {
+        "dependencies": {
+          "Mplx.DotNet": "1.0.0"
+        },
+        "runtime": {
+          "Mplx.DotNet.Sample.dll": {}
+        }
+      },
+      "Mplx.DotNet/1.0.0": {
+        "runtime": {
+          "Mplx.DotNet.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Mplx.DotNet.Sample/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Mplx.DotNet/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

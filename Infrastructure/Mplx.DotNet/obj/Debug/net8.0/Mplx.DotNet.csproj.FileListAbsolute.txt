@@ -1,0 +1,12 @@
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\bin\Debug\net8.0\Mplx.DotNet.deps.json
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\bin\Debug\net8.0\Mplx.DotNet.dll
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\bin\Debug\net8.0\Mplx.DotNet.pdb
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.AssemblyInfoInputs.cache
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.AssemblyInfo.cs
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.csproj.CoreCompileInputs.cache
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.sourcelink.json
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.dll
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\refint\Mplx.DotNet.dll
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\Mplx.DotNet.pdb
+C:\Users\Egor Solovyev\Desktop\Work\testProject\MPLX\mplx\Infrastructure\Mplx.DotNet\obj\Debug\net8.0\ref\Mplx.DotNet.dll

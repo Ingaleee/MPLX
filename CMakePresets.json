@@ -1,16 +1,40 @@
 ﻿{
-  "version": 5,
+  "version": 3,
   "configurePresets": [
     {
       "name": "dev",
-      "generator": "Ninja",
-      "binaryDir": "build/dev",
+      "displayName": "Development",
+      "description": "Development build",
+      "binaryDir": "${sourceDir}/build/dev",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-std=c++20"
+      }
+    },
+    {
+      "name": "dev-msvc",
+      "displayName": "Development MSVC",
+      "description": "Development build with MSVC",
+      "binaryDir": "${sourceDir}/build/dev-msvc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "/std:c++20"
+      },
+      "generator": "Ninja",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
       }
     }
   ],
   "buildPresets": [
-    { "name": "dev", "configurePreset": "dev" }
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "dev-msvc",
+      "configurePreset": "dev-msvc"
+    }
   ]
 }

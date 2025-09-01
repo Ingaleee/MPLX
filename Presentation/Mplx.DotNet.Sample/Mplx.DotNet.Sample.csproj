@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\Mplx.DotNet\Mplx.DotNet.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Mplx.DotNet\Mplx.DotNet.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>

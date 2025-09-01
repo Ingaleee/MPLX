@@ -16,5 +16,5 @@ add_subdirectory(Presentation/tools/mplx)
 # add_subdirectory(Presentation/tools/mplx-net)
 # add_subdirectory(Presentation/tools/mplx-netclient)
 # add_subdirectory(Infrastructure/mplx-pkg)
-# add_subdirectory(Infrastructure/mplx-capi)
+add_subdirectory(Infrastructure/mplx-capi)
 

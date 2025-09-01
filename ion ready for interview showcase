@@ -1,0 +1,5 @@
+[33mc73b9a8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: demo-ready version for interview showcase
+[33m7189ac7[m[33m ([m[1;31morigin/feature/cli-dump-cfg[m[33m, [m[1;32mfeature/cli-dump-cfg[m[33m)[m feat(cli,dump): add bytecode+CFG JSON in --dump output
+[33m1b85925[m[33m ([m[1;31morigin/feature/net-health-client[m[33m, [m[1;32mfeature/net-health-client[m[33m)[m feat(net): add client --health and server HEALTH (0x020x82) JSON with uptime
+[33mf5fba9d[m test(optimizer): add algebraic and const-if folding tests and wire into suite
+[33m4664977[m[33m ([m[1;31morigin/main[m[33m)[m feat(lsp): workspace-wide references and rename prepare-provider
