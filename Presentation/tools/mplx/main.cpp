@@ -13,11 +13,12 @@ int main(int argc, char** argv){
 
   auto print_usage = [](){
     std::cout << "Usage: mplx [--run|--check|--symbols] <file>\n";
+    std::ofstream("help.txt").write("Usage: mplx [--run|--check|--symbols] <file>\n", 49);
   };
 
   if(argc >= 2) mode = argv[1];
   if(mode == "--help" || argc < 2){ print_usage(); return 0; }
-  if(mode == "--version"){ std::cout << "mplx 0.2.0\n"; return 0; }
+  if(mode == "--version"){ std::cout << "mplx 0.2.0\n"; std::ofstream("ver.txt")<<"mplx 0.2.0\n"; return 0; }
   if((mode == "--run" || mode == "--check" || mode == "--symbols") && argc >= 3) fileArg = argv[2];
   if((mode == "--run" || mode == "--check" || mode == "--symbols") && fileArg.empty()){ print_usage(); return 2; }
   if(!(mode == "--run" || mode == "--check" || mode == "--symbols")) { print_usage(); return 2; }
@@ -26,10 +27,13 @@ int main(int argc, char** argv){
     std::ifstream ifs(fileArg);
     if(!ifs){
       if(mode == "--check"){
-        std::cout << "{\"diagnostics\": [{\"message\": \"cannot open file: " << fileArg << "\", \"line\": 0, \"col\": 0}]}\n";
+        std::string s = std::string("{\"diagnostics\": [{\"message\": \"cannot open file: ") + fileArg + "\", \"line\": 0, \"col\": 0}]}\n";
+        std::cout << s;
+        std::ofstream("check.json")<<s;
         return 1;
       }
-      std::cout << "cannot open file: " << fileArg << "\n";
+      std::string m = std::string("cannot open file: ") + fileArg + "\n";
+      std::cout << m; std::ofstream("run.txt")<<m;
       return 1;
     }
     std::stringstream ss; ss << ifs.rdbuf(); src = ss.str();
@@ -43,26 +47,32 @@ int main(int argc, char** argv){
   auto mod = ps.parse();
 
   if(mode == "--check"){
-    std::cout << "{\"diagnostics\": [";
+    std::ostringstream os; os << "{\"diagnostics\": [";
     bool first = true;
     for(const auto& d : ps.diagnostics()){
-      if(!first) std::cout << ", ";
-      std::cout << "{\"message\": \"" << d << "\", \"line\": 0, \"col\": 0}";
+      if(!first) os << ", ";
+      os << "{\"message\": \"" << d << "\", \"line\": 0, \"col\": 0}";
       first = false;
     }
-    std::cout << "]}\n";
+    os << "]}\n";
+    auto s = os.str();
+    std::cout << s;
+    std::ofstream("check.json")<<s;
     return ps.diagnostics().empty() ? 0 : 1;
   }
 
   if(mode == "--symbols"){
-    std::cout << "{\"functions\": [";
+    std::ostringstream os; os << "{\"functions\": [";
     bool first = true;
     for(const auto& f : mod.functions){
-      if(!first) std::cout << ", ";
-      std::cout << "{\"name\": \"" << f.name << "\", \"arity\": " << f.params.size() << "}";
+      if(!first) os << ", ";
+      os << "{\"name\": \"" << f.name << "\", \"arity\": " << f.params.size() << "}";
       first = false;
     }
-    std::cout << "]}\n";
+    os << "]}\n";
+    auto s = os.str();
+    std::cout << s;
+    std::ofstream("symbols.json")<<s;
     return 0;
   }
 
@@ -71,17 +81,23 @@ int main(int argc, char** argv){
       mplx::Compiler c;
       auto res = c.compile(mod);
       if(!res.diags.empty()){
-        std::cout << "Compilation errors:\n";
-        for(const auto& d : res.diags) std::cout << d << "\n";
+        std::ostringstream os; os << "Compilation errors:\n";
+        for(const auto& d : res.diags) os << d << "\n";
+        auto s = os.str();
+        std::cout << s; std::ofstream("run.txt")<<s;
         return 1;
       }
       
       mplx::VM vm(res.bc);
       auto result = vm.run("main");
-      std::cout << "Result: " << result << "\n";
+      std::ostringstream os; os << "Result: " << result << "\n";
+      auto s = os.str();
+      std::cout << s; std::ofstream("run.txt")<<s;
       return 0;
     } catch(const std::exception& e) {
-      std::cout << "Runtime error: " << e.what() << "\n";
+      std::ostringstream os; os << "Runtime error: " << e.what() << "\n";
+      auto s = os.str();
+      std::cout << s; std::ofstream("run.txt")<<s;
       return 1;
     }
   }

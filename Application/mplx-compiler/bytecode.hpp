@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace mplx {
 
@@ -106,4 +107,4 @@ inline std::string dump_cfg_json(const Bytecode& bc){
   return out;
 }
 
-} // namespace mplx
+} 

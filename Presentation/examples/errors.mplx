@@ -1,0 +1,18 @@
+fn broken_function() -> i32 {
+    let x = 5;
+    let y = 3;
+    
+    if (x > y) {
+        return x + y;
+    } else {
+        return x - y;
+    }
+    
+    let z = x * y;
+    return z;
+}
+
+fn main() -> i32 {
+    let result = broken_function();
+    return result;
+}
