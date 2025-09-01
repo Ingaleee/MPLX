@@ -33,6 +33,43 @@ void Compiler::compileExpr(const Expr* e){
     return;
   }
   if(auto b = dynamic_cast<const BinaryExpr*>(e)){
+    // algebraic simplifications and constant folding for integer literals
+    // x + 0, 0 + x, x - 0, x * 1, 1 * x, x * 0, 0 * x, x / 1, 0 / x
+    if (b->op=="+" || b->op=="-" || b->op=="*" || b->op=="/"){
+      auto ll = dynamic_cast<const LiteralExpr*>(b->lhs.get());
+      auto rr = dynamic_cast<const LiteralExpr*>(b->rhs.get());
+      if (!ll && rr){
+        long long rv = rr->value;
+        if (b->op=="+" && rv==0){ compileExpr(b->lhs.get()); return; }
+        if (b->op=="-" && rv==0){ compileExpr(b->lhs.get()); return; }
+        if (b->op=="*" && rv==1){ compileExpr(b->lhs.get()); return; }
+        if (b->op=="*" && rv==0){ auto idx = addConst(0); emit_u8(OP_PUSH_CONST); emit_u32(idx); return; }
+        if (b->op=="/" && rv==1){ compileExpr(b->lhs.get()); return; }
+      }
+      if (ll && !rr){
+        long long lv = ll->value;
+        if (b->op=="+" && lv==0){ compileExpr(b->rhs.get()); return; }
+        if (b->op=="*" && lv==1){ compileExpr(b->rhs.get()); return; }
+        if (b->op=="*" && lv==0){ auto idx = addConst(0); emit_u8(OP_PUSH_CONST); emit_u32(idx); return; }
+        if (b->op=="/" && lv==0){ auto idx = addConst(0); emit_u8(OP_PUSH_CONST); emit_u32(idx); return; }
+      }
+    }
+    // simple constant folding for literal op literal
+    if (auto ll = dynamic_cast<const LiteralExpr*>(b->lhs.get())){
+      if (auto rr = dynamic_cast<const LiteralExpr*>(b->rhs.get())){
+        const std::string& op = b->op;
+        long long lv = ll->value;
+        long long rv = rr->value;
+        bool folded = true;
+        long long out = 0;
+        if (op=="+") out = lv + rv; else if (op=="-") out = lv - rv; else if (op=="*") out = lv * rv;
+        else if (op=="/") { if (rv!=0) out = lv / rv; else folded = false; }
+        else if (op=="==") out = (lv==rv); else if (op=="!=") out = (lv!=rv);
+        else if (op=="<") out = (lv<rv); else if (op=="<=") out = (lv<=rv); else if (op==">") out = (lv>rv); else if (op==">=") out = (lv>=rv);
+        else folded = false;
+        if (folded){ auto idx = addConst(out); emit_u8(OP_PUSH_CONST); emit_u32(idx); return; }
+      }
+    }
     compileExpr(b->lhs.get());
     compileExpr(b->rhs.get());
     const std::string& op=b->op;
@@ -69,17 +106,27 @@ void Compiler::compileStmt(const Stmt* s){
     compileExpr(ret->value.get()); emit_u8(OP_RET); return;
   }
   if(auto ifs = dynamic_cast<const IfStmt*>(s)){
+    // constant-condition fold: if(true){then} else {else} -> compile only taken branch
+    if (auto litc = dynamic_cast<const LiteralExpr*>(ifs->cond.get())){
+      if (litc->value){ for(auto& st : ifs->thenS) compileStmt(st.get()); return; }
+      else { for(auto& st : ifs->elseS) compileStmt(st.get()); return; }
+    }
     compileExpr(ifs->cond.get());
     emit_u8(OP_JMP_IF_FALSE); auto jmpFalsePos = tell(); emit_u32(0);
     // then
     for(auto& st : ifs->thenS) compileStmt(st.get());
-    emit_u8(OP_JMP); auto jmpEndPos = tell(); emit_u32(0);
-    // patch false to else start
-    write_u32_at(jmpFalsePos, tell());
-    // else
-    for(auto& st : ifs->elseS) compileStmt(st.get());
-    // patch end to code end
-    write_u32_at(jmpEndPos, tell());
+    if (ifs->elseS.empty()){
+      // no else: avoid extra JMP, patch false to end
+      write_u32_at(jmpFalsePos, tell());
+    } else {
+      emit_u8(OP_JMP); auto jmpEndPos = tell(); emit_u32(0);
+      // patch false to else start
+      write_u32_at(jmpFalsePos, tell());
+      // else
+      for(auto& st : ifs->elseS) compileStmt(st.get());
+      // patch end to code end
+      write_u32_at(jmpEndPos, tell());
+    }
     return;
   }
   if(auto es = dynamic_cast<const ExprStmt*>(s)){

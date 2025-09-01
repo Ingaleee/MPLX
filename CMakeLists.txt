@@ -16,6 +16,3 @@ add_subdirectory(Presentation/tools/mplx-netclient)
 add_subdirectory(Infrastructure/mplx-pkg)
 add_subdirectory(Infrastructure/mplx-capi)
 
-# Clean Architecture aggregate targets
-add_subdirectory(architecture)
-

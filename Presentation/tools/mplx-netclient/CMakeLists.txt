@@ -1,4 +1,4 @@
-add_executable(mplx-netclient main.cpp)
-find_package(asio CONFIG REQUIRED)
-target_link_libraries(mplx-netclient PRIVATE infrastructure asio::asio)
+add_executable(mplx-netclient-tool main.cpp)
+target_include_directories(mplx-netclient-tool PRIVATE ../../../Infrastructure/mplx-net)
+target_link_libraries(mplx-netclient-tool PRIVATE mplx-net)
 

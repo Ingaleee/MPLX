@@ -2,37 +2,34 @@
 #include "../../../Domain/mplx-lang/parser.hpp"
 #include "../../../Application/mplx-compiler/compiler.hpp"
 #include "../../../Application/mplx-vm/vm.hpp"
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 
 int main(int argc, char** argv){
-  using nlohmann::json;
   std::string mode;
   std::string fileArg;
   std::string src;
 
   auto print_usage = [](){
-    fmt::print("Usage: mplx [--run|--check|--symbols|--dump] <file>\n");
+    std::cout << "Usage: mplx [--run|--check|--symbols] <file>\n";
   };
 
   if(argc >= 2) mode = argv[1];
   if(mode == "--help" || argc < 2){ print_usage(); return 0; }
-  if(mode == "--version"){ fmt::print("mplx 0.1.1\n"); return 0; }
-  if((mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump") && argc >= 3) fileArg = argv[2];
-  if((mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump") && fileArg.empty()){ print_usage(); return 2; }
-  if(!(mode == "--run" || mode == "--check" || mode == "--symbols" || mode == "--dump")) { print_usage(); return 2; }
+  if(mode == "--version"){ std::cout << "mplx 0.2.0\n"; return 0; }
+  if((mode == "--run" || mode == "--check" || mode == "--symbols") && argc >= 3) fileArg = argv[2];
+  if((mode == "--run" || mode == "--check" || mode == "--symbols") && fileArg.empty()){ print_usage(); return 2; }
+  if(!(mode == "--run" || mode == "--check" || mode == "--symbols")) { print_usage(); return 2; }
 
   if(mode == "--run" || mode == "--check" || mode == "--symbols"){
     std::ifstream ifs(fileArg);
     if(!ifs){
       if(mode == "--check"){
-        json j; j["diagnostics"] = { fmt::format("cannot open file: {}", fileArg) };
-        fmt::print("{}\n", j.dump());
+        std::cout << "{\"diagnostics\": [{\"message\": \"cannot open file: " << fileArg << "\", \"line\": 0, \"col\": 0}]}\n";
         return 1;
       }
-      fmt::print("cannot open file: {}\n", fileArg);
+      std::cout << "cannot open file: " << fileArg << "\n";
       return 1;
     }
     std::stringstream ss; ss << ifs.rdbuf(); src = ss.str();
@@ -46,77 +43,48 @@ int main(int argc, char** argv){
   auto mod = ps.parse();
 
   if(mode == "--check"){
-    json j; j["diagnostics"] = json::array();
-    auto push_diag = [&](const std::string& msg){
-      std::size_t l=0,c=0; // default 0-based for editor, but store 1-based
-      // parse prefix like "[line 12:34] ..."
-      if(msg.size()>8 && msg[0]=='['){
-        // naive scan
-        auto p = msg.find("line ");
-        auto q = msg.find(":", p==std::string::npos?0:p+5);
-        auto r = msg.find("]", q==std::string::npos?0:q+1);
-        if(p!=std::string::npos && q!=std::string::npos){
-          try{
-            l = std::stoul(msg.substr(p+5, q-(p+5)));
-            if(r!=std::string::npos) c = std::stoul(msg.substr(q+1, r-(q+1)));
-          } catch(...){ l=0; c=0; }
-        }
-      }
-      // strip bracketed prefix for clean message
-      std::string clean = msg;
-      if(!msg.empty() && msg[0]=='['){
-        auto rb = msg.find(']');
-        if(rb!=std::string::npos && rb+2<=msg.size()) clean = msg.substr(rb+2);
-      }
-      j["diagnostics"].push_back({ {"message", clean}, {"line", l}, {"col", c} });
-    };
-    for(const auto& d : ps.diagnostics()) push_diag(d);
-    // compile too, to catch codegen-level issues
-    if(ps.diagnostics().empty()){
-      mplx::Compiler c;
-      auto res = c.compile(mod);
-      for(const auto& d : res.diags) push_diag(d);
+    std::cout << "{\"diagnostics\": [";
+    bool first = true;
+    for(const auto& d : ps.diagnostics()){
+      if(!first) std::cout << ", ";
+      std::cout << "{\"message\": \"" << d << "\", \"line\": 0, \"col\": 0}";
+      first = false;
     }
-    fmt::print("{}\n", j.dump());
-    return j["diagnostics"].empty() ? 0 : 1;
+    std::cout << "]}\n";
+    return ps.diagnostics().empty() ? 0 : 1;
   }
 
   if(mode == "--symbols"){
-    json out; out["functions"] = json::array();
+    std::cout << "{\"functions\": [";
+    bool first = true;
     for(const auto& f : mod.functions){
-      out["functions"].push_back({ {"name", f.name}, {"arity", (int)f.params.size()} });
+      if(!first) std::cout << ", ";
+      std::cout << "{\"name\": \"" << f.name << "\", \"arity\": " << f.params.size() << "}";
+      first = false;
     }
-    fmt::print("{}\n", out.dump());
+    std::cout << "]}\n";
     return 0;
   }
 
-  if(mode == "--dump"){
-    // print AST and bytecode (JSON)
-    json out; out["ast"] = json::object(); out["ast"]["functions"] = json::array();
-    for(const auto& f : mod.functions){
-      json fn; fn["name"] = f.name; fn["params"] = json::array();
-      for(const auto& p : f.params){ fn["params"].push_back(p.name); }
-      out["ast"]["functions"].push_back(fn);
+  if(mode == "--run"){
+    try {
+      mplx::Compiler c;
+      auto res = c.compile(mod);
+      if(!res.diags.empty()){
+        std::cout << "Compilation errors:\n";
+        for(const auto& d : res.diags) std::cout << d << "\n";
+        return 1;
+      }
+      
+      mplx::VM vm(res.bc);
+      auto result = vm.run("main");
+      std::cout << "Result: " << result << "\n";
+      return 0;
+    } catch(const std::exception& e) {
+      std::cout << "Runtime error: " << e.what() << "\n";
+      return 1;
     }
-    mplx::Compiler c; auto res = c.compile(mod);
-    out["bytecode"] = nlohmann::json::parse(mplx::dump_bytecode_json(res.bc));
-    out["cfg"] = nlohmann::json::parse(mplx::dump_cfg_json(res.bc));
-    fmt::print("{}\n", out.dump());
-    return 0;
   }
 
-  if(!ps.diagnostics().empty()){
-    for(auto& d : ps.diagnostics()) fmt::print("parser: {}\n", d);
-    return 1;
-  }
-  mplx::Compiler c;
-  auto res = c.compile(mod);
-  if(!res.diags.empty()){
-    for(auto& d : res.diags) fmt::print("compile: {}\n", d);
-    return 1;
-  }
-  mplx::VM vm(res.bc);
-  auto v = vm.run("main");
-  fmt::print("{}\n", v);
   return 0;
 }

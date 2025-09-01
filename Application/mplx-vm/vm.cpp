@@ -42,6 +42,8 @@ long long VM::run(const std::string& entry){
         auto callee = bc_.functions[idx];
         uint32_t bp = (uint32_t)(stack_.size() - callee.arity);
         uint32_t ret_ip = ip_; // return to next instruction after CALL
+        // pre-reserve locals to minimize resizes
+        if (stack_.size() < (size_t)(bp + callee.locals)) stack_.resize((size_t)(bp + callee.locals));
         frames_.push_back(CallFrame{ret_ip, idx, bp, callee.arity, callee.locals});
         ip_ = callee.entry;
         break;
@@ -56,7 +58,13 @@ long long VM::run(const std::string& entry){
         ip_ = frame.ip;
         break;
       }
-      case OP_POP: { (void)pop(); break; }
+      case OP_POP: {
+        // fast-path: if next instruction is RET, skip actual pop
+        Op next = (ip_ < bc_.code.size()) ? (Op)bc_.code[ip_] : OP_HALT;
+        if (next == OP_RET) { break; }
+        (void)pop();
+        break;
+      }
       case OP_HALT: return pop();
       default: throw std::runtime_error("unknown opcode");
     }

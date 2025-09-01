@@ -1,27 +1,29 @@
-#include <benchmark/benchmark.h>
-#include "../src-cpp/mplx-lang/lexer.hpp"
-#include "../src-cpp/mplx-lang/parser.hpp"
-#include "../src-cpp/mplx-compiler/compiler.hpp"
-#include "../src-cpp/mplx-vm/vm.hpp"
+#include <iostream>
+#include <chrono>
+#include "../../../Domain/mplx-lang/lexer.hpp"
+#include "../../../Domain/mplx-lang/parser.hpp"
+#include "../../../Application/mplx-compiler/compiler.hpp"
+#include "../../../Application/mplx-vm/vm.hpp"
 
-static void BM_CompileAndRun(benchmark::State& state) {
+static void BM_CompileAndRun() {
   const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
-  for (auto _ : state) {
-    mplx::Lexer lx(src);
-    auto toks = lx.Lex();
-    mplx::Parser ps(std::move(toks));
-    auto mod = ps.parse();
-    mplx::Compiler c;
-    auto res = c.compile(mod);
-    mplx::VM vm(res.bc);
-    auto v = vm.run("main");
-    benchmark::DoNotOptimize(v);
-  }
+  auto start = std::chrono::high_resolution_clock::now();
+  
+  mplx::Lexer lx(src);
+  auto toks = lx.Lex();
+  mplx::Parser ps(std::move(toks));
+  auto mod = ps.parse();
+  mplx::Compiler c;
+  auto res = c.compile(mod);
+  mplx::VM vm(res.bc);
+  auto v = vm.run("main");
+  
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "CompileAndRun: " << duration.count() << " microseconds, result: " << v << std::endl;
 }
 
-BENCHMARK(BM_CompileAndRun);
-
-static void BM_RunOnly(benchmark::State& state) {
+static void BM_RunOnly() {
   const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
   mplx::Lexer lx(src);
   auto toks = lx.Lex();
@@ -30,41 +32,21 @@ static void BM_RunOnly(benchmark::State& state) {
   mplx::Compiler c;
   auto res = c.compile(mod);
   mplx::VM vm(res.bc);
-  for (auto _ : state) {
-    auto v = vm.run("main");
-    benchmark::DoNotOptimize(v);
-  }
+  
+  auto start = std::chrono::high_resolution_clock::now();
+  auto v = vm.run("main");
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "RunOnly: " << duration.count() << " microseconds, result: " << v << std::endl;
 }
 
-BENCHMARK(BM_RunOnly);
-
-static void BM_CompileOnly(benchmark::State& state) {
-  const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
-  for (auto _ : state) {
-    mplx::Lexer lx(src);
-    auto toks = lx.Lex();
-    mplx::Parser ps(std::move(toks));
-    auto mod = ps.parse();
-    mplx::Compiler c;
-    auto res = c.compile(mod);
-    benchmark::DoNotOptimize(res.bc.consts.size());
-  }
+int main() {
+  std::cout << "MPLX Benchmarks (simplified version)\n";
+  std::cout << "Note: Full benchmarks require Google Benchmark library\n\n";
+  
+  BM_CompileAndRun();
+  BM_RunOnly();
+  
+  return 0;
 }
-
-BENCHMARK(BM_CompileOnly);
-
-static void BM_LexParseOnly(benchmark::State& state) {
-  const char* src = "fn main() -> i32 { let x = 0; x = x + 1 * 2; return x; }";
-  for (auto _ : state) {
-    mplx::Lexer lx(src);
-    auto toks = lx.Lex();
-    mplx::Parser ps(std::move(toks));
-    auto mod = ps.parse();
-    benchmark::DoNotOptimize(mod.functions.size());
-  }
-}
-
-BENCHMARK(BM_LexParseOnly);
-
-BENCHMARK_MAIN();
 
