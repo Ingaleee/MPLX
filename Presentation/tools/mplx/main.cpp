@@ -12,14 +12,21 @@ int main(int argc, char** argv){
   std::string src;
 
   auto print_usage = [](){
-    std::cout << "Usage: mplx [--run|--check|--symbols] <file>\n";
-    std::ofstream("help.txt").write("Usage: mplx [--run|--check|--symbols] <file>\n", 49);
+    std::cout << "Usage: mplx [--run|--check|--symbols] [--jit on|off|auto] <file>\n";
+    std::ofstream("help.txt").write("Usage: mplx [--run|--check|--symbols] [--jit on|off|auto] <file>\n", 74);
   };
 
   if(argc >= 2) mode = argv[1];
   if(mode == "--help" || argc < 2){ print_usage(); return 0; }
   if(mode == "--version"){ std::cout << "mplx 0.2.0\n"; std::ofstream("ver.txt")<<"mplx 0.2.0\n"; return 0; }
-  if((mode == "--run" || mode == "--check" || mode == "--symbols") && argc >= 3) fileArg = argv[2];
+  // optional --jit flag
+  std::string jitMode = "auto";
+  int argi = 2;
+  if (argc >= 4 && std::string(argv[2]) == "--jit") {
+    jitMode = argv[3];
+    argi = 4;
+  }
+  if((mode == "--run" || mode == "--check" || mode == "--symbols") && argc > argi) fileArg = argv[argi];
   if((mode == "--run" || mode == "--check" || mode == "--symbols") && fileArg.empty()){ print_usage(); return 2; }
   if(!(mode == "--run" || mode == "--check" || mode == "--symbols")) { print_usage(); return 2; }
 
@@ -89,6 +96,9 @@ int main(int argc, char** argv){
       }
       
       mplx::VM vm(res.bc);
+#if defined(MPLX_WITH_JIT)
+      (void)jitMode; // placeholder for future JIT integration
+#endif
       auto result = vm.run("main");
       std::ostringstream os; os << "Result: " << result << "\n";
       auto s = os.str();

@@ -22,6 +22,11 @@ private:
   std::vector<CallFrame> frames_;
   uint32_t ip_{0};
 
+#if defined(MPLX_WITH_JIT)
+  // JIT placeholders for future integration
+  // e.g., pointers to compiled entries cache, runtime helpers
+#endif
+
   void push(long long x){ stack_.push_back(VMValue{x}); }
   long long pop(){ auto v=stack_.back().i; stack_.pop_back(); return v; }
 };
