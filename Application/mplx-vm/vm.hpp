@@ -28,6 +28,7 @@ private:
 public:
   using JitEntryPtr = long long(*)(void*);
   std::unordered_map<uint32_t, JitEntryPtr> jitted_;
+  std::unordered_map<uint32_t, std::unique_ptr<uint8_t[]>> jit_mem_;
 private:
 #endif
 
