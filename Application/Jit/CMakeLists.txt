@@ -1,5 +1,8 @@
 add_library(mplx-jit
   x64_emitter.hpp
+  platform.hpp
+  platform_win.cpp
+  platform_posix.cpp
   jit_runtime.hpp
   jit_runtime.cpp
 )
