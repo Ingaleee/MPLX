@@ -17,6 +17,14 @@ long long VM::run(const std::string& entry){
   // initial frame (return ip = code end -> HALT)
   frames_.push_back(CallFrame{ (uint32_t)bc_.code.size()-1, it->second, 0, fn.arity, fn.locals });
   ip_ = fn.entry;
+#if defined(MPLX_WITH_JIT)
+  // If entry function is jitted, call it directly
+  auto jitIt = jitted_.find(it->second);
+  if (jitIt != jitted_.end()){
+    auto ret = jitIt->second(this);
+    return ret;
+  }
+#endif
 
   while(true){
     auto op = (Op)bc_.code[ip_++];

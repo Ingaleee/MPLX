@@ -25,6 +25,10 @@ private:
 #if defined(MPLX_WITH_JIT)
   // JIT placeholders for future integration
   // e.g., pointers to compiled entries cache, runtime helpers
+public:
+  using JitEntryPtr = long long(*)(void*);
+  std::unordered_map<uint32_t, JitEntryPtr> jitted_;
+private:
 #endif
 
   void push(long long x){ stack_.push_back(VMValue{x}); }
