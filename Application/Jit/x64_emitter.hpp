@@ -115,6 +115,27 @@ namespace mplx::jit {
       buf.emit_u8(0xBB);
       buf.emit_u64(imm);
     }
+    // mov r12, imm64
+    void mov_r12_imm(uint64_t imm) { buf.emit_u8(0x49); buf.emit_u8(0xBC); buf.emit_u64(imm); }
+    // mov r13, imm64
+    void mov_r13_imm(uint64_t imm) { buf.emit_u8(0x49); buf.emit_u8(0xBD); buf.emit_u64(imm); }
+    // mov r13, [rcx+disp32]
+    void mov_r13_m_rcx_disp32(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x8B); buf.emit_u8(0xA9); buf.emit_u32(disp); }
+    // mov r12, [rcx+disp32]
+    void mov_r12_m_rcx_disp32(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x8B); buf.emit_u8(0xA1); buf.emit_u32(disp); }
+    // mov rbx, [rcx+disp32]
+    void mov_rbx_m_rcx_disp32(uint32_t disp) { buf.emit_u8(0x48); buf.emit_u8(0x8B); buf.emit_u8(0x99); buf.emit_u32(disp); }
+    // mov [r13 + r12*8 + disp32], rax
+    void mov_m_r13_r12_s8_disp32_rax(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x89); buf.emit_u8(0x84); buf.emit_u8(0xE5); buf.emit_u32(disp); }
+    // mov rax, [r13 + r12*8 + disp32]
+    void mov_rax_m_r13_r12_s8_disp32(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x8B); buf.emit_u8(0x84); buf.emit_u8(0xE5); buf.emit_u32(disp); }
+    // mov rbx, [r13 + r12*8 + disp32]
+    void mov_rbx_m_r13_r12_s8_disp32(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x8B); buf.emit_u8(0x9C); buf.emit_u8(0xE5); buf.emit_u32(disp); }
+    // inc r12 / dec r12
+    void inc_r12() { buf.emit_u8(0x49); buf.emit_u8(0xFF); buf.emit_u8(0xC4); }
+    void dec_r12() { buf.emit_u8(0x49); buf.emit_u8(0xFF); buf.emit_u8(0xCC); }
+    // mov [rcx+disp32], r12 (store sp_index)
+    void mov_m_rcx_disp32_r12(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x89); buf.emit_u8(0xA1); buf.emit_u32(disp); }
     // add rax, rbx
     void add_rax_rbx() {
       buf.emit_u8(0x48);

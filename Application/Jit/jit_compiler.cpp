@@ -244,6 +244,14 @@ namespace mplx::jit {
 
     X64Emitter e;
     e.prologue();
+    // Map VM::jitState fields into registers from rcx (Win) / rdi (SysV). We assume Win here for brevity.
+    // rcx -> VM*, [rcx + offset(stack_ptr)] -> r13, [rcx + offset(sp_index)] -> r12, [rcx + offset(bp_index)] -> rbx
+    const uint32_t off_stack_ptr = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, stack_ptr);
+    const uint32_t off_sp_index  = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, sp_index);
+    const uint32_t off_bp_index  = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, bp_index);
+    e.mov_r13_m_rcx_disp32(off_stack_ptr);
+    e.mov_r12_m_rcx_disp32(off_sp_index);
+    e.mov_rbx_m_rcx_disp32(off_bp_index);
 
     // Two-pass prep: compute label ids for jump targets in this function
     std::unordered_map<uint32_t, int> ip_to_label;
