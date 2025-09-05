@@ -43,8 +43,20 @@ namespace mplx {
     }
     if (auto v = dynamic_cast<const VarExpr *>(e)) {
       auto idx = localIndex(v->name);
-      emit_u8(OP_LOAD_LOCAL);
-      emit_u32(idx);
+      if (idx <= 3) {
+        switch (idx) {
+        case 0: emit_u8(OP_LD0); break;
+        case 1: emit_u8(OP_LD1); break;
+        case 2: emit_u8(OP_LD2); break;
+        case 3: emit_u8(OP_LD3); break;
+        }
+      } else if (idx <= 0xFF) {
+        emit_u8(OP_LOAD_LOCAL8);
+        emit_u8((uint8_t)idx);
+      } else {
+        emit_u8(OP_LOAD_LOCAL);
+        emit_u32(idx);
+      }
       return;
     }
     if (auto u = dynamic_cast<const UnaryExpr *>(e)) {
@@ -203,15 +215,39 @@ namespace mplx {
       uint16_t idx     = currentLocals_++;
       scope[let->name] = idx;
       compileExpr(let->init.get());
-      emit_u8(OP_STORE_LOCAL);
-      emit_u32(idx);
+      if (idx <= 3) {
+        switch (idx) {
+        case 0: emit_u8(OP_ST0); break;
+        case 1: emit_u8(OP_ST1); break;
+        case 2: emit_u8(OP_ST2); break;
+        case 3: emit_u8(OP_ST3); break;
+        }
+      } else if (idx <= 0xFF) {
+        emit_u8(OP_STORE_LOCAL8);
+        emit_u8((uint8_t)idx);
+      } else {
+        emit_u8(OP_STORE_LOCAL);
+        emit_u32(idx);
+      }
       return;
     }
     if (auto as = dynamic_cast<const AssignStmt *>(s)) {
       auto idx = localIndex(as->name);
       compileExpr(as->value.get());
-      emit_u8(OP_STORE_LOCAL);
-      emit_u32(idx);
+      if (idx <= 3) {
+        switch (idx) {
+        case 0: emit_u8(OP_ST0); break;
+        case 1: emit_u8(OP_ST1); break;
+        case 2: emit_u8(OP_ST2); break;
+        case 3: emit_u8(OP_ST3); break;
+        }
+      } else if (idx <= 0xFF) {
+        emit_u8(OP_STORE_LOCAL8);
+        emit_u8((uint8_t)idx);
+      } else {
+        emit_u8(OP_STORE_LOCAL);
+        emit_u32(idx);
+      }
       return;
     }
     if (auto ret = dynamic_cast<const ReturnStmt *>(s)) {

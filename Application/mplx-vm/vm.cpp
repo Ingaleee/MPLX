@@ -64,6 +64,12 @@ namespace mplx {
         push(stack_[bp + idx].i);
         break;
       }
+      case OP_LOAD_LOCAL8: {
+        uint32_t idx = bc_.code[ip_++];
+        auto bp      = frames_.back().bp;
+        push(stack_[bp + idx].i);
+        break;
+      }
       case OP_STORE_LOCAL: {
         uint32_t idx = read_u32(bc_.code, ip_);
         auto bp      = frames_.back().bp;
@@ -74,6 +80,24 @@ namespace mplx {
         push(v);
         break;
       }
+      case OP_STORE_LOCAL8: {
+        uint32_t idx = bc_.code[ip_++];
+        auto bp      = frames_.back().bp;
+        long long v  = pop();
+        if (bp + idx >= stack_.size())
+          stack_.resize(bp + idx + 1);
+        stack_[bp + idx].i = v;
+        push(v);
+        break;
+      }
+      case OP_LD0: { auto bp = frames_.back().bp; push(stack_[bp + 0].i); break; }
+      case OP_LD1: { auto bp = frames_.back().bp; push(stack_[bp + 1].i); break; }
+      case OP_LD2: { auto bp = frames_.back().bp; push(stack_[bp + 2].i); break; }
+      case OP_LD3: { auto bp = frames_.back().bp; push(stack_[bp + 3].i); break; }
+      case OP_ST0: { auto bp = frames_.back().bp; auto v = pop(); stack_[bp + 0].i = v; push(v); break; }
+      case OP_ST1: { auto bp = frames_.back().bp; auto v = pop(); stack_[bp + 1].i = v; push(v); break; }
+      case OP_ST2: { auto bp = frames_.back().bp; auto v = pop(); stack_[bp + 2].i = v; push(v); break; }
+      case OP_ST3: { auto bp = frames_.back().bp; auto v = pop(); stack_[bp + 3].i = v; push(v); break; }
       case OP_ADD: {
         auto b = pop();
         auto a = pop();
@@ -96,6 +120,12 @@ namespace mplx {
         auto b = pop();
         auto a = pop();
         push(a / b);
+        break;
+      }
+      case OP_MOD: {
+        auto b = pop();
+        auto a = pop();
+        push(a % b);
         break;
       }
       case OP_NEG: {
@@ -149,6 +179,30 @@ namespace mplx {
         auto c       = pop();
         if (!c)
           ip_ = dst;
+        break;
+      }
+      case OP_JMP_IF_TRUE: {
+        uint32_t dst = read_u32(bc_.code, ip_);
+        auto c       = pop();
+        if (c)
+          ip_ = dst;
+        break;
+      }
+      case OP_AND: {
+        auto b = pop();
+        auto a = pop();
+        push((a != 0) && (b != 0));
+        break;
+      }
+      case OP_OR: {
+        auto b = pop();
+        auto a = pop();
+        push((a != 0) || (b != 0));
+        break;
+      }
+      case OP_NOT: {
+        auto a = pop();
+        push(a == 0);
         break;
       }
       case OP_CALL: {

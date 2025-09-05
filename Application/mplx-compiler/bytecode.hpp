@@ -8,12 +8,24 @@ namespace mplx {
 
   enum Op : uint8_t {
     OP_PUSH_CONST,
+    // fast locals
+    OP_LD0,
+    OP_LD1,
+    OP_LD2,
+    OP_LD3,
+    OP_ST0,
+    OP_ST1,
+    OP_ST2,
+    OP_ST3,
+    OP_LOAD_LOCAL8,   // 1-byte index
+    OP_STORE_LOCAL8,  // 1-byte index
     OP_LOAD_LOCAL,
     OP_STORE_LOCAL,
     OP_ADD,
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_MOD,
     OP_NEG,
     OP_EQ,
     OP_NE,
@@ -23,6 +35,10 @@ namespace mplx {
     OP_GE,
     OP_JMP,
     OP_JMP_IF_FALSE,
+    OP_JMP_IF_TRUE,
+    OP_AND,
+    OP_OR,
+    OP_NOT,
     OP_CALL,
     OP_RET,
     OP_POP,
@@ -93,7 +109,7 @@ namespace mplx {
         uint32_t dst = read32(ip);
         add_leader(dst);
         add_leader(ip);
-      } else if (op == OP_JMP_IF_FALSE) {
+      } else if (op == OP_JMP_IF_FALSE || op == OP_JMP_IF_TRUE) {
         uint32_t dst = read32(ip);
         add_leader(dst);
         add_leader(ip);
@@ -101,6 +117,9 @@ namespace mplx {
         (void)read32(ip);
       } else if (op == OP_PUSH_CONST || op == OP_LOAD_LOCAL || op == OP_STORE_LOCAL) {
         (void)read32(ip);
+      } else if (op == OP_LOAD_LOCAL8 || op == OP_STORE_LOCAL8) {
+        // 1-byte immediate
+        if (ip < bc.code.size()) ++ip;
       }
     }
     // sort leaders and form blocks
@@ -128,9 +147,11 @@ namespace mplx {
         last         = p;
         Op op        = (Op)bc.code[p++];
         auto read32b = [&](uint32_t &q) { uint32_t v = (uint32_t)bc.code[q] | ((uint32_t)bc.code[q+1]<<8) | ((uint32_t)bc.code[q+2]<<16) | ((uint32_t)bc.code[q+3]<<24); q+=4; return v; };
-        if (op == OP_JMP || op == OP_CALL || op == OP_PUSH_CONST || op == OP_LOAD_LOCAL || op == OP_STORE_LOCAL || op == OP_JMP_IF_FALSE) {
-          if (op == OP_JMP || op == OP_JMP_IF_FALSE || op == OP_CALL || op == OP_PUSH_CONST || op == OP_LOAD_LOCAL || op == OP_STORE_LOCAL)
+        if (op == OP_JMP || op == OP_CALL || op == OP_PUSH_CONST || op == OP_LOAD_LOCAL || op == OP_STORE_LOCAL || op == OP_JMP_IF_FALSE || op == OP_JMP_IF_TRUE) {
+          if (op == OP_JMP || op == OP_JMP_IF_FALSE || op == OP_JMP_IF_TRUE || op == OP_CALL || op == OP_PUSH_CONST || op == OP_LOAD_LOCAL || op == OP_STORE_LOCAL)
             (void)read32b(p);
+        } else if (op == OP_LOAD_LOCAL8 || op == OP_STORE_LOCAL8) {
+          if (p < blocks[bi].end) ++p;
         }
       }
       Op term    = (Op)bc.code[last];
@@ -140,7 +161,7 @@ namespace mplx {
         int tb       = find_block(dst);
         if (tb >= 0)
           edges.push_back({(int)bi, tb});
-      } else if (term == OP_JMP_IF_FALSE) {
+      } else if (term == OP_JMP_IF_FALSE || term == OP_JMP_IF_TRUE) {
         uint32_t dst = (uint32_t)bc.code[q] | ((uint32_t)bc.code[q + 1] << 8) | ((uint32_t)bc.code[q + 2] << 16) | ((uint32_t)bc.code[q + 3] << 24);
         int tb       = find_block(dst);
         if (tb >= 0)

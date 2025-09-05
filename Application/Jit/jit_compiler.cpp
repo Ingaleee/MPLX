@@ -61,7 +61,7 @@ namespace mplx::jit {
         continue;
       }
 
-      if (op == OP_ADD || op == OP_SUB || op == OP_MUL || op == OP_DIV) {
+      if (op == OP_ADD || op == OP_SUB || op == OP_MUL || op == OP_DIV || op == OP_MOD) {
         if (st.size() < 2) {
           ok = false;
           break;
@@ -77,12 +77,18 @@ namespace mplx::jit {
           r = a - b;
         else if (op == OP_MUL)
           r = a * b;
-        else {
+        else if (op == OP_DIV) {
           if (b == 0) {
             ok = false;
             break;
           }
           r = a / b;
+        } else { // OP_MOD
+          if (b == 0) {
+            ok = false;
+            break;
+          }
+          r = a % b;
         }
         st.push_back(r);
         continue;
@@ -149,6 +155,41 @@ namespace mplx::jit {
         st.pop_back();
         if (!c)
           ip = dst;
+        continue;
+      }
+
+      if (op == OP_JMP_IF_TRUE) {
+        uint32_t dst = read_u32(bc.code, ip);
+        if (st.empty()) {
+          ok = false;
+          break;
+        }
+        long long c = st.back();
+        st.pop_back();
+        if (c)
+          ip = dst;
+        continue;
+      }
+
+      if (op == OP_AND) {
+        if (st.size() < 2) { ok = false; break; }
+        long long b = st.back(); st.pop_back();
+        long long a = st.back(); st.pop_back();
+        st.push_back((a != 0) && (b != 0));
+        continue;
+      }
+
+      if (op == OP_OR) {
+        if (st.size() < 2) { ok = false; break; }
+        long long b = st.back(); st.pop_back();
+        long long a = st.back(); st.pop_back();
+        st.push_back((a != 0) || (b != 0));
+        continue;
+      }
+
+      if (op == OP_NOT) {
+        if (st.empty()) { ok = false; break; }
+        long long a = st.back(); st.back() = (a == 0);
         continue;
       }
 
