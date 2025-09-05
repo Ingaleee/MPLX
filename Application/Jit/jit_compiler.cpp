@@ -88,6 +88,25 @@ namespace mplx::jit {
         continue;
       }
 
+      if (op == OP_NEG) {
+        if (st.empty()) {
+          ok = false;
+          break;
+        }
+        long long a = st.back();
+        st.back()   = -a;
+        continue;
+      }
+
+      if (op == OP_POP) {
+        if (st.empty()) {
+          ok = false;
+          break;
+        }
+        st.pop_back();
+        continue;
+      }
+
       if (op == OP_EQ || op == OP_NE || op == OP_LT || op == OP_LE || op == OP_GT || op == OP_GE) {
         if (st.size() < 2) {
           ok = false;
