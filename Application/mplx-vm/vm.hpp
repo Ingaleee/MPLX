@@ -23,6 +23,8 @@ namespace mplx {
   public:
     explicit VM(const Bytecode &bc) : bc_(bc) {}
     long long run(const std::string &entry = "main");
+    // v0 JIT helper: run by function index (no argument marshalling beyond VM's own stack)
+    long long runByIndex(uint32_t fnIndex);
 
   private:
     const Bytecode &bc_;

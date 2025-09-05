@@ -238,13 +238,14 @@ namespace mplx::jit {
       ok = false;
       break;
     }
-    if (!ok || st.empty())
+    if (!ok)
       return std::nullopt;
-    long long result = st.back();
 
     X64Emitter e;
     e.prologue();
-    e.mov_rax_imm((uint64_t)result);
+    // If we ended on RET with a stack value, return it; otherwise default 0
+    uint64_t result = st.empty() ? 0ull : (uint64_t)st.back();
+    e.mov_rax_imm(result);
     e.epilogue();
     e.ret();
 

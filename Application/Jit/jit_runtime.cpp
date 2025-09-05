@@ -1,5 +1,6 @@
 #include "jit_runtime.hpp"
 #include "platform.hpp"
+#include "../mplx-vm/vm.hpp"
 #include <cstring>
 
 namespace mplx::jit {
@@ -62,5 +63,12 @@ namespace mplx::jit {
     out.entry = reinterpret_cast<JitEntryPtr>(ex.ptr);
     return out;
   }
+
+  // Helper callable from JIT stubs: interpret given function index on the VM
+  static long long vm_runtime_call(void *vm_state, uint32_t fnIndex) {
+    auto *vm = reinterpret_cast<mplx::VM *>(vm_state);
+    return vm->runByIndex(fnIndex);
+  }
+
 
 } // namespace mplx::jit
