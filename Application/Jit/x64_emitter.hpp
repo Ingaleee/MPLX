@@ -33,6 +33,7 @@ namespace mplx::jit {
     struct Fixup { size_t pos; int label; enum Kind { JMP, JZ, JNZ } kind; };
     std::vector<size_t> label_pos;
     std::vector<Fixup> fixups;
+    bool emit_canaries{true};
     // Prologue/Epilogue with ABI bits (shadow space on Win, callee-saved regs)
     void prologue() {
       // push rbp; mov rbp,rsp
@@ -93,16 +94,29 @@ namespace mplx::jit {
     void bind_label(int id) {
       if (id >= 0 && (size_t)id < label_pos.size())
         label_pos[(size_t)id] = buf.size();
+      if (emit_canaries) canary();
     }
     void finalize_fixups() {
+      bool ok = true;
       for (auto &f : fixups) {
-        if ((size_t)f.label >= label_pos.size()) continue;
+        if ((size_t)f.label >= label_pos.size()) { ok = false; continue; }
         size_t target = label_pos[(size_t)f.label];
-        if (target == (size_t)-1) continue;
+        if (target == (size_t)-1) { ok = false; continue; }
         int64_t rel = (int64_t)target - (int64_t)(f.pos + 4);
         for (int i = 0; i < 4; ++i) buf.bytes[f.pos + i] = uint8_t((rel >> (i * 8)) & 0xFF);
       }
+      if (!ok) {
+        // Print label table and abort
+        fprintf(stderr, "[jit] finalize_fixups failed. Labels:\n");
+        for (size_t i = 0; i < label_pos.size(); ++i) {
+          auto lp = label_pos[i];
+          if (lp == (size_t)-1) fprintf(stderr, "  label %zu: <unbound>\n", i);
+          else fprintf(stderr, "  label %zu: %zu\n", i, lp);
+        }
+        abort();
+      }
     }
+    void canary() { buf.emit_u8(0xCC); }
     // mov rax, imm64
     void mov_rax_imm(uint64_t imm) {
       buf.emit_u8(0x48);

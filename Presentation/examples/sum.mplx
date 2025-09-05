@@ -1,0 +1,15 @@
+fn sum(n: i64) -> i64 {
+    let i = 0;
+    let s = 0;
+    while (i <= n) {
+        s = s + i;
+        i = i + 1;
+    }
+    return s;
+}
+
+fn main() -> i64 {
+    return sum(5000000);
+}
+
+

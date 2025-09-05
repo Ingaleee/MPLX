@@ -14,6 +14,11 @@ namespace mplx::jit {
   }
 
   std::optional<JitCompiled> JitCompiler::compileFunction(const CompileCtx &ctx) {
+    // detect dump mode via env once per call (cheap)
+    if (const char *env = std::getenv("MPLX_JIT_DUMP")) {
+      enable_dump = (std::strcmp(env, "0") != 0);
+    }
+    bc_to_mc.clear();
     // v0: если функция состоит из поддерживаемых опкодов (PUSH_CONST, арифметика, сравнения,
     // JMP/JMP_IF_FALSE с вычислимым условием, RET), — вычисляем результат при JIT и эмитим mov rax,imm.
     const Bytecode &bc = *ctx.bc;
@@ -243,6 +248,7 @@ namespace mplx::jit {
       return std::nullopt;
 
     X64Emitter e;
+    e.emit_canaries = true;
     e.prologue();
     // Map VM::jitState fields into registers from rcx (Win) / rdi (SysV). We assume Win here for brevity.
     // rcx -> VM*, [rcx + offset(stack_ptr)] -> r13, [rcx + offset(sp_index)] -> r12, [rcx + offset(bp_index)] -> rbx
@@ -295,6 +301,7 @@ namespace mplx::jit {
         if (gop == OP_JMP) {
           uint32_t dst = read_u32(bc.code, gip);
           int lid      = ip_to_label[dst];
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
           e.jmp_label(lid);
           continue;
         }
@@ -302,6 +309,7 @@ namespace mplx::jit {
           uint32_t dst = read_u32(bc.code, gip);
           int lid      = ip_to_label[dst];
           // Convention for now: test rax,rax (result of last calc) then jz
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
           e.test_rax_rax();
           e.jz_label(lid);
           continue;
@@ -309,6 +317,7 @@ namespace mplx::jit {
         if (gop == OP_JMP_IF_TRUE) {
           uint32_t dst = read_u32(bc.code, gip);
           int lid      = ip_to_label[dst];
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
           e.test_rax_rax();
           e.jnz_label(lid);
           continue;
@@ -316,6 +325,7 @@ namespace mplx::jit {
         if (gop == OP_PUSH_CONST) {
           uint32_t ci = read_u32(bc.code, gip);
           uint64_t imm = (ci < bc.consts.size()) ? (uint64_t)bc.consts[ci] : 0ull;
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
           e.mov_rax_imm(imm);
           e.mov_m_r13_r12_s8_disp32_rax(0);
           e.inc_r12();
@@ -323,11 +333,13 @@ namespace mplx::jit {
         }
         if (gop == OP_POP) {
           // pop TOS: dec sp
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12();
           continue;
         }
         if (gop == OP_NEG) {
           // a = pop(); push(-a)
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12();
           e.mov_rax_m_r13_r12_s8_disp32(0);
           // rax = -rax -> two's complement: neg rax (opcode F7 D8)
@@ -338,6 +350,7 @@ namespace mplx::jit {
         }
         auto emit_binop = [&](uint8_t which){
           // pop b, pop a, rax = a op b, push rax
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12();
           e.mov_rbx_m_r13_r12_s8_disp32(0);
           e.dec_r12();
@@ -367,6 +380,7 @@ namespace mplx::jit {
 
         auto emit_cmp = [&](uint8_t which){
           // pop b, pop a, rax = (a ? b) -> setcc to al, zero-extend
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
           // cmp rax, rbx
@@ -395,6 +409,7 @@ namespace mplx::jit {
         if (gop == OP_GE) { emit_cmp(5); continue; }
 
         if (gop == OP_AND) {
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           // pop b, pop a, push((a!=0)&&(b!=0))
           e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
@@ -414,6 +429,7 @@ namespace mplx::jit {
           continue;
         }
         if (gop == OP_OR) {
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
           e.test_rax_rax(); e.buf.emit_u8(0x0F); e.buf.emit_u8(0x95); e.buf.emit_u8(0xC0); // setne al
@@ -428,6 +444,7 @@ namespace mplx::jit {
           continue;
         }
         if (gop == OP_NOT) {
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
           e.test_rax_rax();
           // setz al ; movzx rax, al
@@ -438,6 +455,7 @@ namespace mplx::jit {
         }
         if (gop == OP_CALL) {
           uint32_t fnIdx = read_u32(bc.code, gip);
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
 #if MPLX_WIN
           // Windows x64: rcx=vm, rdx=fnIndex
           e.buf.emit_u8(0x48); e.buf.emit_u8(0xC7); e.buf.emit_u8(0xC2); // mov rdx, imm32
@@ -456,6 +474,7 @@ namespace mplx::jit {
           continue;
         }
         if (gop == OP_RET) {
+          bc_to_mc.push_back({gip - 1, e.buf.size()});
           // rax = pop(); persist sp_index back to VM; epilogue+ret
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
           e.mov_m_rcx_disp32_r12(off_sp_index);
@@ -486,11 +505,31 @@ namespace mplx::jit {
     std::memcpy(ex.ptr, e.buf.data(), e.buf.size());
     plat::flush_icache(ex.ptr, e.buf.size());
 
+    if (enable_dump) {
+      // hex dump
+      fprintf(stderr, "[jit] fn=%u code_size=%zu\n", ctx.fnIndex, e.buf.size());
+      for (size_t i = 0; i < e.buf.size(); ++i) {
+        fprintf(stderr, "%02X ", (unsigned)e.buf.data()[i]);
+        if ((i % 16) == 15) fprintf(stderr, "\n");
+      }
+      if ((e.buf.size() % 16) != 0) fprintf(stderr, "\n");
+      // mini-disasm: just show addresses and bytes
+      size_t base = 0;
+      fprintf(stderr, "[jit] disasm (addr: byte)\n");
+      for (size_t i = 0; i < e.buf.size(); ++i) {
+        fprintf(stderr, "%04zu: %02X\n", base + i, (unsigned)e.buf.data()[i]);
+      }
+      // map: bc ip -> mc offset
+      fprintf(stderr, "[jit] map bc_ip -> mc_off\n");
+      for (auto &p : bc_to_mc) {
+        fprintf(stderr, "  %u -> %zu\n", p.first, p.second);
+      }
+    }
+
     JitCompiled out;
     out.mem.reset(reinterpret_cast<uint8_t *>(ex.ptr));
     out.size  = e.buf.size();
     out.entry = reinterpret_cast<JitEntryPtr>(ex.ptr);
     return out;
   }
-
-} // namespace mplx::jit
+} 

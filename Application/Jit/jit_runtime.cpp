@@ -73,6 +73,13 @@ namespace mplx::jit {
 
   extern "C" long long jit_runtime_call(void *vm_state, uint32_t fnIndex, uint32_t /*argc*/) {
     auto *vm = reinterpret_cast<mplx::VM *>(vm_state);
+#if defined(MPLX_WITH_JIT)
+    // Prefer compiled entry if available
+    if (auto it = vm->jitted_.find(fnIndex); it != vm->jitted_.end() && it->second) {
+      return it->second(vm_state);
+    }
+#endif
+    // Fallback to interpreter for the target function
     return vm->runByIndex(fnIndex);
   }
 

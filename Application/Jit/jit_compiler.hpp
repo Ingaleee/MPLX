@@ -18,6 +18,10 @@ namespace mplx::jit {
   class JitCompiler {
   public:
     std::optional<JitCompiled> compileFunction(const CompileCtx &ctx);
+    // diagnostics
+    bool enable_dump{false}; // set by env or CLI
+    // filled per compile
+    std::vector<std::pair<uint32_t, size_t>> bc_to_mc; // bytecode ip -> machine-code offset
   };
 
 } // namespace mplx::jit

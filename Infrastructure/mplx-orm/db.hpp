@@ -86,7 +86,7 @@ namespace mplx::orm {
     sqlite3_stmt *stmt_{};
   };
 
-} // namespace mplx::orm
+}
 
 namespace mplx::orm {
 
@@ -99,4 +99,4 @@ namespace mplx::orm {
     st.reset();
   }
 
-} // namespace mplx::orm
+}
