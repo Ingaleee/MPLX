@@ -64,11 +64,11 @@ namespace mplx::jit {
     return out;
   }
 
-  // Helper callable from JIT stubs: interpret given function index on the VM
-  static long long vm_runtime_call(void *vm_state, uint32_t fnIndex) {
+
+  extern "C" long long vm_runtime_call(void *vm_state, uint32_t fnIndex) {
     auto *vm = reinterpret_cast<mplx::VM *>(vm_state);
     return vm->runByIndex(fnIndex);
   }
 
 
-} // namespace mplx::jit
+} 

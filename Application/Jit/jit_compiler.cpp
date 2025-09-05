@@ -436,6 +436,25 @@ namespace mplx::jit {
           e.mov_m_r13_r12_s8_disp32_rax(0); e.inc_r12();
           continue;
         }
+        if (gop == OP_CALL) {
+          uint32_t fnIdx = read_u32(bc.code, gip);
+#if MPLX_WIN
+          // Windows x64: rcx=vm, rdx=fnIndex
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0xC7); e.buf.emit_u8(0xC2); // mov rdx, imm32
+          e.buf.emit_u32(fnIdx);
+#else
+          // System V (future): rdi=vm (already), rsi=fnIndex
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0xC7); e.buf.emit_u8(0xC6); // mov rsi, imm32
+          e.buf.emit_u32(fnIdx);
+#endif
+          // call vm_runtime_call
+          e.mov_rax_imm((uint64_t)&vm_runtime_call);
+          e.buf.emit_u8(0xFF); e.buf.emit_u8(0xD0); // call rax
+          // push return value onto VM stack
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
         if (gop == OP_RET) {
           // rax = pop(); persist sp_index back to VM; epilogue+ret
           e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);

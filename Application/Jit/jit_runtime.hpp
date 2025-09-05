@@ -28,4 +28,6 @@ namespace mplx::jit {
     JitCompiled compileRuntimeCall(RuntimeCallFn fn, uint32_t fnIndex);
   };
 
+  extern "C" long long vm_runtime_call(void *vm_state, uint32_t fnIndex);
+
 } // namespace mplx::jit
