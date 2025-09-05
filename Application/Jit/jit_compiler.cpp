@@ -48,6 +48,21 @@ namespace mplx::jit {
         continue;
       }
 
+      if (op == OP_LOAD_LOCAL8) {
+        if (ip >= bc.code.size()) { ok = false; break; }
+        uint32_t idx = bc.code[ip++];
+        if (idx >= locals.size()) { ok = false; break; }
+        st.push_back(locals[(size_t)idx]);
+        continue;
+      }
+
+      if (op == OP_LD0 || op == OP_LD1 || op == OP_LD2 || op == OP_LD3) {
+        uint32_t idx = (op == OP_LD0 ? 0u : op == OP_LD1 ? 1u : op == OP_LD2 ? 2u : 3u);
+        if (idx >= locals.size()) { ok = false; break; }
+        st.push_back(locals[(size_t)idx]);
+        continue;
+      }
+
       if (op == OP_STORE_LOCAL) {
         uint32_t idx = read_u32(bc.code, ip);
         if (st.empty() || idx >= locals.size()) {
@@ -58,6 +73,23 @@ namespace mplx::jit {
         st.pop_back();
         locals[(size_t)idx] = v;
         st.push_back(v);
+        continue;
+      }
+
+      if (op == OP_STORE_LOCAL8) {
+        if (ip >= bc.code.size()) { ok = false; break; }
+        uint32_t idx = bc.code[ip++];
+        if (st.empty() || idx >= locals.size()) { ok = false; break; }
+        long long v = st.back(); st.pop_back();
+        locals[(size_t)idx] = v; st.push_back(v);
+        continue;
+      }
+
+      if (op == OP_ST0 || op == OP_ST1 || op == OP_ST2 || op == OP_ST3) {
+        uint32_t idx = (op == OP_ST0 ? 0u : op == OP_ST1 ? 1u : op == OP_ST2 ? 2u : 3u);
+        if (st.empty() || idx >= locals.size()) { ok = false; break; }
+        long long v = st.back(); st.pop_back();
+        locals[(size_t)idx] = v; st.push_back(v);
         continue;
       }
 
@@ -194,6 +226,12 @@ namespace mplx::jit {
       }
 
       if (op == OP_RET) {
+        break;
+      }
+
+      if (op == OP_CALL) {
+        // v0: we do not inline calls; stop JIT for this function for now
+        ok = false;
         break;
       }
 

@@ -21,8 +21,11 @@ namespace mplx::jit {
   class JitRuntime {
   public:
     JitRuntime() = default;
-    // For MVP we just expose a stub that returns constant 0
+    // For MVP: stubs
     JitCompiled compileReturnZero();
+    // v0: runtime helper call trampoline (placeholder for CALL n)
+    using RuntimeCallFn = long long (*)(void *vm_state, uint32_t fnIndex);
+    JitCompiled compileRuntimeCall(RuntimeCallFn fn, uint32_t fnIndex);
   };
 
 } // namespace mplx::jit
