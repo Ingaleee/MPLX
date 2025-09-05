@@ -23,17 +23,84 @@ std::optional<JitCompiled> JitCompiler::compileFunction(const CompileCtx& ctx){
   locals.resize(fn.locals, 0);
   bool ok = true;
   int guard = 0;
-  while (ip < bc.code.size() && guard++ < 100000){
+  while (ip < bc.code.size() && guard++ < 100000) {
     Op op = (Op)bc.code[ip++];
-    if (op == OP_PUSH_CONST){ uint32_t ci = read_u32(bc.code, ip); if (ci >= bc.consts.size()){ ok=false; break; } st.push_back(bc.consts[ci]); }
-    else if (op == OP_LOAD_LOCAL){ uint32_t idx = read_u32(bc.code, ip); if (idx >= locals.size()){ ok=false; break; } st.push_back(locals[(size_t)idx]); }
-    else if (op == OP_STORE_LOCAL){ uint32_t idx = read_u32(bc.code, ip); if (st.empty() || idx >= locals.size()){ ok=false; break; } long long v = st.back(); st.pop_back(); locals[(size_t)idx] = v; st.push_back(v); }
-    else if (op == OP_ADD || op == OP_SUB || op == OP_MUL || op == OP_DIV){ if (st.size()<2){ ok=false; break; } long long b=st.back(); st.pop_back(); long long a=st.back(); st.pop_back(); long long r=0; if(op==OP_ADD) r=a+b; else if(op==OP_SUB) r=a-b; else if(op==OP_MUL) r=a*b; else { if (b==0){ ok=false; break; } r=a/b; } st.push_back(r); }
-    else if (op == OP_EQ || op == OP_NE || op == OP_LT || op == OP_LE || op == OP_GT || op == OP_GE){ if (st.size()<2){ ok=false; break; } long long b=st.back(); st.pop_back(); long long a=st.back(); st.pop_back(); long long r=0; if(op==OP_EQ) r=(a==b); else if(op==OP_NE) r=(a!=b); else if(op==OP_LT) r=(a<b); else if(op==OP_LE) r=(a<=b); else if(op==OP_GT) r=(a>b); else r=(a>=b); st.push_back(r); }
-    else if (op == OP_JMP){ uint32_t dst = read_u32(bc.code, ip); ip = dst; }
-    else if (op == OP_JMP_IF_FALSE){ uint32_t dst = read_u32(bc.code, ip); if (st.empty()){ ok=false; break; } long long c = st.back(); st.pop_back(); if (!c) ip = dst; }
-    else if (op == OP_RET){ break; }
-    else { ok=false; break; }
+
+    if (op == OP_PUSH_CONST) {
+      uint32_t ci = read_u32(bc.code, ip);
+      if (ci >= bc.consts.size()) { ok = false; break; }
+      st.push_back(bc.consts[ci]);
+      continue;
+    }
+
+    if (op == OP_LOAD_LOCAL) {
+      uint32_t idx = read_u32(bc.code, ip);
+      if (idx >= locals.size()) { ok = false; break; }
+      st.push_back(locals[(size_t)idx]);
+      continue;
+    }
+
+    if (op == OP_STORE_LOCAL) {
+      uint32_t idx = read_u32(bc.code, ip);
+      if (st.empty() || idx >= locals.size()) { ok = false; break; }
+      long long v = st.back();
+      st.pop_back();
+      locals[(size_t)idx] = v;
+      st.push_back(v);
+      continue;
+    }
+
+    if (op == OP_ADD || op == OP_SUB || op == OP_MUL || op == OP_DIV) {
+      if (st.size() < 2) { ok = false; break; }
+      long long b = st.back(); st.pop_back();
+      long long a = st.back(); st.pop_back();
+      long long r = 0;
+      if (op == OP_ADD) r = a + b;
+      else if (op == OP_SUB) r = a - b;
+      else if (op == OP_MUL) r = a * b;
+      else {
+        if (b == 0) { ok = false; break; }
+        r = a / b;
+      }
+      st.push_back(r);
+      continue;
+    }
+
+    if (op == OP_EQ || op == OP_NE || op == OP_LT || op == OP_LE || op == OP_GT || op == OP_GE) {
+      if (st.size() < 2) { ok = false; break; }
+      long long b = st.back(); st.pop_back();
+      long long a = st.back(); st.pop_back();
+      long long r = 0;
+      if      (op == OP_EQ) r = (a == b);
+      else if (op == OP_NE) r = (a != b);
+      else if (op == OP_LT) r = (a <  b);
+      else if (op == OP_LE) r = (a <= b);
+      else if (op == OP_GT) r = (a >  b);
+      else                  r = (a >= b);
+      st.push_back(r);
+      continue;
+    }
+
+    if (op == OP_JMP) {
+      uint32_t dst = read_u32(bc.code, ip);
+      ip = dst;
+      continue;
+    }
+
+    if (op == OP_JMP_IF_FALSE) {
+      uint32_t dst = read_u32(bc.code, ip);
+      if (st.empty()) { ok = false; break; }
+      long long c = st.back(); st.pop_back();
+      if (!c) ip = dst;
+      continue;
+    }
+
+    if (op == OP_RET) {
+      break;
+    }
+
+    ok = false;
+    break;
   }
   if (!ok || st.empty()) return std::nullopt;
   long long result = st.back();
@@ -56,4 +123,4 @@ std::optional<JitCompiled> JitCompiler::compileFunction(const CompileCtx& ctx){
   return out;
 }
 
-} // namespace mplx::jit
+} 
