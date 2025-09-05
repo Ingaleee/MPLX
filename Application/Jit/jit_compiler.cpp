@@ -56,6 +56,4 @@ std::optional<JitCompiled> JitCompiler::compileFunction(const CompileCtx& ctx){
   return out;
 }
 
-} 
-
-
+} // namespace mplx::jit

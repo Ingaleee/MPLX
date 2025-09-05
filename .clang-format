@@ -1,0 +1,12 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ColumnLimit: 0
+NamespaceIndentation: All
+AlignConsecutiveAssignments: true
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Attach
+SpacesInParentheses: false
+SpaceBeforeParens: ControlStatements
+
