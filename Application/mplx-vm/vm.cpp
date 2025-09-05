@@ -23,6 +23,10 @@ namespace mplx {
 
     // initial frame (return ip = code end -> HALT)
     frames_.push_back(CallFrame{(uint32_t)bc_.code.size() - 1, it->second, 0, fn.arity, fn.locals});
+    // sync JIT state for base frame
+    jit_state_.bp_index  = 0;
+    jit_state_.stack_ptr = (stack_.empty() ? nullptr : &stack_[0].i);
+    jit_state_.sp_index  = (uint64_t)stack_.size();
     ip_ = fn.entry;
 #if defined(MPLX_WITH_JIT)
     // If entry function is jitted, call it directly
@@ -224,6 +228,8 @@ namespace mplx {
         // drop stack to base pointer
         stack_.resize(frame.bp);
         push(ret);
+        // after returning to caller, bp changes
+        jit_state_.bp_index = frames_.empty() ? 0 : frames_.back().bp;
         if (frames_.empty())
           return ret;
         ip_ = frame.ip;
