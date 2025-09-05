@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <cstdio>
+#include <cstdlib>
 
 namespace mplx::jit {
 
@@ -34,6 +36,7 @@ namespace mplx::jit {
     std::vector<size_t> label_pos;
     std::vector<Fixup> fixups;
     bool emit_canaries{true};
+    bool fixups_ok{true};
     // Prologue/Epilogue with ABI bits (shadow space on Win, callee-saved regs)
     void prologue() {
       // push rbp; mov rbp,rsp
@@ -106,14 +109,16 @@ namespace mplx::jit {
         for (int i = 0; i < 4; ++i) buf.bytes[f.pos + i] = uint8_t((rel >> (i * 8)) & 0xFF);
       }
       if (!ok) {
-        // Print label table and abort
+        // Print label table, mark failure, but do not abort. Caller should fallback to interpreter.
         fprintf(stderr, "[jit] finalize_fixups failed. Labels:\n");
         for (size_t i = 0; i < label_pos.size(); ++i) {
           auto lp = label_pos[i];
           if (lp == (size_t)-1) fprintf(stderr, "  label %zu: <unbound>\n", i);
           else fprintf(stderr, "  label %zu: %zu\n", i, lp);
         }
-        abort();
+        fixups_ok = false;
+      } else {
+        fixups_ok = true;
       }
     }
     void canary() { buf.emit_u8(0xCC); }
@@ -150,6 +155,10 @@ namespace mplx::jit {
     void dec_r12() { buf.emit_u8(0x49); buf.emit_u8(0xFF); buf.emit_u8(0xCC); }
     // mov [rcx+disp32], r12 (store sp_index)
     void mov_m_rcx_disp32_r12(uint32_t disp) { buf.emit_u8(0x4C); buf.emit_u8(0x89); buf.emit_u8(0xA1); buf.emit_u32(disp); }
+    // mov rax, [rbx+disp32] (load local variable)
+    void mov_rax_m_rbx_disp32(uint32_t disp) { buf.emit_u8(0x48); buf.emit_u8(0x8B); buf.emit_u8(0x83); buf.emit_u32(disp); }
+    // mov [rbx+disp32], rax (store local variable)
+    void mov_m_rbx_disp32_rax(uint32_t disp) { buf.emit_u8(0x48); buf.emit_u8(0x89); buf.emit_u8(0x83); buf.emit_u32(disp); }
     // add rax, rbx
     void add_rax_rbx() {
       buf.emit_u8(0x48);

@@ -39,7 +39,12 @@ namespace mplx {
     while (!is_at_end()) {
       if (check(TokenKind::Eof))
         break;
+      size_t before = i;
       m.functions.push_back(parseFunction());
+      if (i == before) {
+        error_here("parser made no progress");
+        if (!is_at_end()) advance();
+      }
     }
     return m;
   }
@@ -65,9 +70,14 @@ namespace mplx {
     f.params     = params;
     f.returnType = retType;
     while (!check(TokenKind::RBrace) && !is_at_end()) {
+      size_t beforeBody = i;
       auto s = parseStmt();
       if (s)
         f.body.push_back(std::move(s));
+      if (i == beforeBody) {
+        error_here("parser made no progress in function body");
+        if (!is_at_end()) advance();
+      }
     }
     if (!match(TokenKind::RBrace))
       error_here("expected '}'");
@@ -97,6 +107,8 @@ namespace mplx {
   std::unique_ptr<Stmt> Parser::parseStmt() {
     if (check(TokenKind::KwIf))
       return parseIf();
+    if (check(TokenKind::KwWhile))
+      return parseWhile();
     if (check(TokenKind::KwLet))
       return parseLet();
     if (check(TokenKind::KwReturn))
@@ -114,20 +126,57 @@ namespace mplx {
     if (!match(TokenKind::LBrace))
       error_here("expected '{' after if");
     auto stmt = std::make_unique<IfStmt>();
-    while (!check(TokenKind::RBrace) && !is_at_end())
+    while (!check(TokenKind::RBrace) && !is_at_end()) {
+      size_t beforeThen = i;
       stmt->thenS.push_back(parseStmt());
+      if (i == beforeThen) {
+        error_here("parser made no progress in if-body");
+        if (!is_at_end()) advance();
+      }
+    }
     if (!match(TokenKind::RBrace))
       error_here("expected '}' after if-body");
     if (match(TokenKind::KwElse)) {
       if (!match(TokenKind::LBrace))
         error_here("expected '{' after else");
-      while (!check(TokenKind::RBrace) && !is_at_end())
+      while (!check(TokenKind::RBrace) && !is_at_end()) {
+        size_t beforeElse = i;
         stmt->elseS.push_back(parseStmt());
+        if (i == beforeElse) {
+          error_here("parser made no progress in else-body");
+          if (!is_at_end()) advance();
+        }
+      }
       if (!match(TokenKind::RBrace))
         error_here("expected '}' after else-body");
     }
     stmt->cond = std::move(cond);
     return stmt;
+  }
+
+  std::unique_ptr<Stmt> Parser::parseWhile() {
+    advance(); // while
+    if (!match(TokenKind::LParen))
+      error_here("expected '(' after while");
+    auto cond = expression();
+    if (!match(TokenKind::RParen))
+      error_here("expected ')' after while condition");
+    std::vector<std::unique_ptr<Stmt>> body;
+    if (match(TokenKind::LBrace)) {
+      while (!check(TokenKind::RBrace) && !is_at_end()) {
+        size_t before = i;
+        body.push_back(parseStmt());
+        if (i == before) {
+          error_here("parser made no progress in while-body");
+          if (!is_at_end()) advance();
+        }
+      }
+      if (!match(TokenKind::RBrace))
+        error_here("expected '}' after while body");
+    } else {
+      body.push_back(parseStmt());
+    }
+    return std::make_unique<WhileStmt>(std::move(cond), std::move(body));
   }
 
   std::unique_ptr<Stmt> Parser::parseLet() {

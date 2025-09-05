@@ -1,5 +1,5 @@
 #pragma once
-#include "x64_emitter.hpp"
+#include "jit_compiler.hpp"
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
@@ -10,13 +10,7 @@ namespace mplx {
 
 namespace mplx::jit {
 
-  using JitEntryPtr = long long (*)(void *vm_state);
 
-  struct JitCompiled {
-    std::unique_ptr<uint8_t[]> mem;
-    size_t size{0};
-    JitEntryPtr entry{nullptr};
-  };
 
   class JitRuntime {
   public:

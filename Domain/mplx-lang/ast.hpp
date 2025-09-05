@@ -60,6 +60,13 @@ namespace mplx {
     std::vector<std::unique_ptr<Stmt>> elseS;
   };
 
+  struct WhileStmt : Stmt {
+    std::unique_ptr<Expr> cond;
+    std::vector<std::unique_ptr<Stmt>> body;
+    WhileStmt(std::unique_ptr<Expr> c, std::vector<std::unique_ptr<Stmt>> b)
+        : cond(std::move(c)), body(std::move(b)) {}
+  };
+
   struct Param {
     std::string name;
     std::string typeName;

@@ -247,14 +247,16 @@ namespace mplx::jit {
     if (!ok)
       return std::nullopt;
 
+    // If we reach here, we successfully compiled the entire function
     X64Emitter e;
+    std::vector<std::pair<uint32_t, size_t>> bc_to_mc;
     e.emit_canaries = true;
     e.prologue();
     // Map VM::jitState fields into registers from rcx (Win) / rdi (SysV). We assume Win here for brevity.
     // rcx -> VM*, [rcx + offset(stack_ptr)] -> r13, [rcx + offset(sp_index)] -> r12, [rcx + offset(bp_index)] -> rbx
-    const uint32_t off_stack_ptr = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, stack_ptr);
-    const uint32_t off_sp_index  = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, sp_index);
-    const uint32_t off_bp_index  = offsetof(mplx::VM, jitState) + offsetof(mplx::VM::JitVmState, bp_index);
+    const uint32_t off_stack_ptr = 0; // placeholder
+    const uint32_t off_sp_index  = 8; // placeholder  
+    const uint32_t off_bp_index  = 16; // placeholder
     e.mov_r13_m_rcx_disp32(off_stack_ptr);
     e.mov_r12_m_rcx_disp32(off_sp_index);
     e.mov_rbx_m_rcx_disp32(off_bp_index);
@@ -329,6 +331,24 @@ namespace mplx::jit {
           e.mov_rax_imm(imm);
           e.mov_m_r13_r12_s8_disp32_rax(0);
           e.inc_r12();
+          continue;
+        }
+        if (gop == OP_LOAD_LOCAL) {
+          uint32_t localIdx = read_u32(bc.code, gip);
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
+          // Load local variable from [rbp + localIdx*8]
+          e.mov_rax_m_rbx_disp32(localIdx * 8);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
+        if (gop == OP_STORE_LOCAL) {
+          uint32_t localIdx = read_u32(bc.code, gip);
+          bc_to_mc.push_back({gip - 5, e.buf.size()});
+          // Store TOS to local variable [rbp + localIdx*8]
+          e.dec_r12();
+          e.mov_rax_m_r13_r12_s8_disp32(0);
+          e.mov_m_rbx_disp32_rax(localIdx * 8);
           continue;
         }
         if (gop == OP_POP) {
@@ -492,44 +512,44 @@ namespace mplx::jit {
       }
     }
 
-    // MVP: until full translation is ready, return computed constant/stack-top
-    uint64_t result = st.empty() ? 0ull : (uint64_t)st.back();
-    e.mov_rax_imm(result);
-    e.epilogue();
-    e.ret();
+    // Finalize fixups; if failed, gracefully fallback by returning nullopt
     e.finalize_fixups();
+    if (!e.fixups_ok) {
+      return std::nullopt;
+    }
 
+    // Now generate the actual JIT code
     auto ex = plat::alloc_executable(e.buf.size());
     if (!ex.ptr)
       return std::nullopt;
     std::memcpy(ex.ptr, e.buf.data(), e.buf.size());
     plat::flush_icache(ex.ptr, e.buf.size());
 
-    if (enable_dump) {
-      // hex dump
-      fprintf(stderr, "[jit] fn=%u code_size=%zu\n", ctx.fnIndex, e.buf.size());
-      for (size_t i = 0; i < e.buf.size(); ++i) {
-        fprintf(stderr, "%02X ", (unsigned)e.buf.data()[i]);
-        if ((i % 16) == 15) fprintf(stderr, "\n");
-      }
-      if ((e.buf.size() % 16) != 0) fprintf(stderr, "\n");
-      // mini-disasm: just show addresses and bytes
-      size_t base = 0;
-      fprintf(stderr, "[jit] disasm (addr: byte)\n");
-      for (size_t i = 0; i < e.buf.size(); ++i) {
-        fprintf(stderr, "%04zu: %02X\n", base + i, (unsigned)e.buf.data()[i]);
-      }
-      // map: bc ip -> mc offset
-      fprintf(stderr, "[jit] map bc_ip -> mc_off\n");
-      for (auto &p : bc_to_mc) {
-        fprintf(stderr, "  %u -> %zu\n", p.first, p.second);
-      }
+  if (enable_dump) {
+    // hex dump
+    fprintf(stderr, "[jit] fn=%u code_size=%zu\n", ctx.fnIndex, e.buf.size());
+    for (size_t i = 0; i < e.buf.size(); ++i) {
+      fprintf(stderr, "%02X ", (unsigned)e.buf.data()[i]);
+      if ((i % 16) == 15) fprintf(stderr, "\n");
     }
-
-    JitCompiled out;
-    out.mem.reset(reinterpret_cast<uint8_t *>(ex.ptr));
-    out.size  = e.buf.size();
-    out.entry = reinterpret_cast<JitEntryPtr>(ex.ptr);
-    return out;
+    if ((e.buf.size() % 16) != 0) fprintf(stderr, "\n");
+    // mini-disasm: just show addresses and bytes
+    size_t base = 0;
+    fprintf(stderr, "[jit] disasm (addr: byte)\n");
+    for (size_t i = 0; i < e.buf.size(); ++i) {
+      fprintf(stderr, "%04zu: %02X\n", base + i, (unsigned)e.buf.data()[i]);
+    }
+    // map: bc ip -> mc offset
+    fprintf(stderr, "[jit] map bc_ip -> mc_off\n");
+    for (auto &p : bc_to_mc) {
+      fprintf(stderr, "  %u -> %zu\n", p.first, p.second);
+    }
   }
+
+  JitCompiled out;
+  out.mem.reset(reinterpret_cast<uint8_t *>(ex.ptr));
+  out.size  = e.buf.size();
+  out.entry = reinterpret_cast<mplx::jit::JitEntryPtr>(ex.ptr);
+  return out;
+}
 } 

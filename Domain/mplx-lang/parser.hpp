@@ -28,6 +28,7 @@ namespace mplx {
     std::vector<Param> parseParams();
     std::unique_ptr<Stmt> parseStmt();
     std::unique_ptr<Stmt> parseIf();
+    std::unique_ptr<Stmt> parseWhile();
     std::unique_ptr<Stmt> parseLet();
     std::unique_ptr<Stmt> parseReturn();
     std::unique_ptr<Stmt> parseExprStmt();

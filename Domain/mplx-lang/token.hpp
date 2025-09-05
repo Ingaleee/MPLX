@@ -13,6 +13,7 @@ namespace mplx {
     KwReturn,
     KwIf,
     KwElse,
+    KwWhile,
     LParen,
     RParen,
     LBrace,

@@ -10,6 +10,7 @@ namespace mplx {
       {"return", TokenKind::KwReturn},
       {"if", TokenKind::KwIf},
       {"else", TokenKind::KwElse},
+      {"while", TokenKind::KwWhile},
   };
 
   void Lexer::skip_ws() {

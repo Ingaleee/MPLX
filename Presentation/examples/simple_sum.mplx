@@ -1,5 +1,5 @@
-fn sum() -> i64 {
-    let n = 50000;
+fn main() -> i64 {
+    let n = 1000;
     let i = 0;
     let s = 0;
     while (i <= n) {
@@ -8,9 +8,3 @@ fn sum() -> i64 {
     }
     return s;
 }
-
-fn main() -> i64 {
-    return sum();
-}
-
-

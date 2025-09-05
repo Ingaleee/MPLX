@@ -292,6 +292,23 @@ namespace mplx {
       }
       return;
     }
+    if (auto ws = dynamic_cast<const WhileStmt *>(s)) {
+      uint32_t loopStart = tell();
+      // cond
+      compileExpr(ws->cond.get());
+      emit_u8(OP_JMP_IF_FALSE);
+      auto jmpExitPos = tell();
+      emit_u32(0);
+      // body
+      for (auto &st : ws->body)
+        compileStmt(st.get());
+      // jump back to start
+      emit_u8(OP_JMP);
+      emit_u32(loopStart);
+      // patch exit
+      write_u32_at(jmpExitPos, tell());
+      return;
+    }
     if (auto es = dynamic_cast<const ExprStmt *>(s)) {
       compileExpr(es->expr.get());
       emit_u8(OP_POP);

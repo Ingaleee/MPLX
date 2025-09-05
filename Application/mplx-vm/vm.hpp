@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include <vector>
 
 namespace mplx {
@@ -31,6 +32,12 @@ namespace mplx {
     void setHotThreshold(uint32_t t) { hot_threshold_ = t; }
     JitMode jitMode() const { return jit_mode_; }
 
+    // Trace controls (no-op if not used by caller)
+    void setTrace(bool enabled) { trace_enabled_ = enabled; }
+    void setTraceLimit(uint64_t limit) { trace_limit_ = limit; }
+    bool isTraceEnabled() const { return trace_enabled_; }
+    uint64_t traceLimit() const { return trace_limit_; }
+
     // Minimal ABI snapshot for JIT codegen (stable layout)
     struct JitVmState {
       long long *stack_ptr{nullptr};
@@ -47,6 +54,8 @@ namespace mplx {
     JitVmState jit_state_{};
     JitMode jit_mode_{JitMode::Auto};
     uint32_t hot_threshold_{1};
+    bool trace_enabled_{false};
+    uint64_t trace_limit_{0};
 
 #if defined(MPLX_WITH_JIT)
     // JIT placeholders for future integration

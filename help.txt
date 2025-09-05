@@ -1,0 +1,1 @@
+Usage: mplx [--run|--check|--symbols|--bench] [--jit on|off|auto] [--jit-dump] [--hot N] [--jit-verify] [--trace] [--trace-limit N] [--out PATH] [--no-runfile] <file>

@@ -1,4 +1,5 @@
 #include "jit_runtime.hpp"
+#include "jit_compiler.hpp"
 #include "platform.hpp"
 #include "../mplx-vm/vm.hpp"
 #include <cstring>

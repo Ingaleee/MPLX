@@ -1,0 +1,6 @@
+﻿fn main() {
+  let x = 10;
+  if (x < 5) { return 1; }
+  if (x == 10) { return 42; }
+  return 0;
+}
