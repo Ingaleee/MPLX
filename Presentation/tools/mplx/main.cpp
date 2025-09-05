@@ -29,10 +29,15 @@ int main(int argc, char **argv) {
   }
   // optional --jit flag
   std::string jitMode = "auto";
+  int hotThreshold    = 1;
   int argi            = 2;
   if (argc >= 4 && std::string(argv[2]) == "--jit") {
     jitMode = argv[3];
     argi    = 4;
+  }
+  if (argc >= argi + 2 && std::string(argv[argi]) == "--hot" ) {
+    hotThreshold = std::atoi(argv[argi+1]);
+    argi += 2;
   }
   if ((mode == "--run" || mode == "--check" || mode == "--symbols") && argc > argi)
     fileArg = argv[argi];
@@ -122,7 +127,10 @@ int main(int argc, char **argv) {
 
       mplx::VM vm(res.bc);
 #if defined(MPLX_WITH_JIT)
-      (void)jitMode; // placeholder for future JIT integration
+      if (jitMode == "off") vm.setJitMode(mplx::VM::JitMode::Off);
+      else if (jitMode == "on") vm.setJitMode(mplx::VM::JitMode::On);
+      else vm.setJitMode(mplx::VM::JitMode::Auto);
+      vm.setHotThreshold(hotThreshold);
 #endif
       auto result = vm.run("main");
       std::ostringstream os;
