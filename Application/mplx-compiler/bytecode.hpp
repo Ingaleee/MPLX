@@ -50,6 +50,10 @@ namespace mplx {
     uint32_t entry{0};
     uint8_t arity{0};
     uint16_t locals{0};
+    // JIT integration
+    void *compiled_entry{nullptr};
+    bool is_jitted{false};
+    uint32_t hot_count{0};
   };
 
   struct Bytecode {

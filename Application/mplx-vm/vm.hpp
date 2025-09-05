@@ -25,6 +25,11 @@ namespace mplx {
     long long run(const std::string &entry = "main");
     // v0 JIT helper: run by function index (no argument marshalling beyond VM's own stack)
     long long runByIndex(uint32_t fnIndex);
+    // JIT mode
+    enum class JitMode { Off, On, Auto };
+    void setJitMode(JitMode m) { jit_mode_ = m; }
+    void setHotThreshold(uint32_t t) { hot_threshold_ = t; }
+    JitMode jitMode() const { return jit_mode_; }
 
     // Minimal ABI snapshot for JIT codegen (stable layout)
     struct JitVmState {
@@ -40,6 +45,8 @@ namespace mplx {
     std::vector<CallFrame> frames_;
     uint32_t ip_{0};
     JitVmState jit_state_{};
+    JitMode jit_mode_{JitMode::Auto};
+    uint32_t hot_threshold_{1};
 
 #if defined(MPLX_WITH_JIT)
     // JIT placeholders for future integration

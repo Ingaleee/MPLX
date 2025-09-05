@@ -29,26 +29,25 @@ namespace mplx {
     jit_state_.sp_index  = (uint64_t)stack_.size();
     ip_ = fn.entry;
 #if defined(MPLX_WITH_JIT)
-    // If entry function is jitted, call it directly
-    auto jitIt = jitted_.find(it->second);
-    if (jitIt != jitted_.end()) {
-      auto ret = jitIt->second(this);
-      return ret;
-    }
+    // JIT integration
 #if defined(MPLX_WITH_JIT)
-    // Try JIT-compile entry on demand
-    {
-      mplx::jit::JitCompiler jc;
-      mplx::jit::CompileCtx cctx;
-      cctx.bc       = &bc_;
-      cctx.fnIndex  = it->second;
-      auto compiled = jc.compileFunction(cctx);
-      if (compiled) {
-        jitted_[it->second] = compiled->entry;
-        // Keep memory alive in VM map
-        jit_mem_[it->second] = std::move(compiled->mem);
-        auto ret             = compiled->entry(this);
-        return ret;
+    if (jit_mode_ != JitMode::Off) {
+      auto &fnmeta = bc_.functions[it->second];
+      if (fnmeta.compiled_entry) {
+        using FnPtr = long long (*)(void *);
+        return ((FnPtr)fnmeta.compiled_entry)(this);
+      }
+      if (jit_mode_ == JitMode::On || (jit_mode_ == JitMode::Auto && (++fnmeta.hot_count >= hot_threshold_))) {
+        mplx::jit::JitCompiler jc;
+        mplx::jit::CompileCtx cctx; cctx.bc = &bc_; cctx.fnIndex = it->second;
+        if (auto compiled = jc.compileFunction(cctx)) {
+          jitted_[it->second]             = compiled->entry;
+          jit_mem_[it->second]            = std::move(compiled->mem);
+          fnmeta.compiled_entry           = (void *)compiled->entry;
+          fnmeta.is_jitted                = true;
+          using FnPtr = long long (*)(void *);
+          return ((FnPtr)fnmeta.compiled_entry)(this);
+        }
       }
     }
 #endif
@@ -252,4 +251,4 @@ namespace mplx {
     }
   }
 
-} // namespace mplx
+} 
