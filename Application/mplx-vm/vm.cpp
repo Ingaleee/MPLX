@@ -1,5 +1,8 @@
 ﻿#include "vm.hpp"
 #include <cstring>
+#if defined(MPLX_WITH_JIT)
+#include "../Jit/jit_compiler.hpp"
+#endif
 
 namespace mplx {
 
@@ -24,6 +27,21 @@ long long VM::run(const std::string& entry){
     auto ret = jitIt->second(this);
     return ret;
   }
+#if defined(MPLX_WITH_JIT)
+  // Try JIT-compile entry on demand
+  {
+    mplx::jit::JitCompiler jc;
+    mplx::jit::CompileCtx cctx; cctx.bc = &bc_; cctx.fnIndex = it->second;
+    auto compiled = jc.compileFunction(cctx);
+    if (compiled){
+      jitted_[it->second] = compiled->entry;
+      // Keep memory alive in VM map
+      jit_mem_[it->second] = std::move(compiled->mem);
+      auto ret = compiled->entry(this);
+      return ret;
+    }
+  }
+#endif
 #endif
 
   while(true){
