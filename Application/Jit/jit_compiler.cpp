@@ -2,6 +2,7 @@
 #include "../mplx-compiler/bytecode.hpp"
 #include "jit_runtime.hpp"
 #include "platform.hpp"
+#include "../mplx-vm/vm.hpp"
 #include <cstring>
 
 namespace mplx::jit {
@@ -281,6 +282,8 @@ namespace mplx::jit {
           e.bind_label(itl->second);
         }
         Op gop = (Op)bc.code[gip++];
+        // TODO: map VM::jitState to registers (r13=stack base, r12=sp index, rbx=bp index)
+        // For now, we only handle control flow here; data ops fallback to MVP path below.
         if (gop == OP_JMP) {
           uint32_t dst = read_u32(bc.code, gip);
           int lid      = ip_to_label[dst];

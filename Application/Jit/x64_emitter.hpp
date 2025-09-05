@@ -57,6 +57,8 @@ namespace mplx::jit {
       buf.emit_u8(0x56); // push r14
       buf.emit_u8(0x41);
       buf.emit_u8(0x57); // push r15
+      // and rsp, -16 (mask)
+      and_rsp_imm8(0xF0);
     }
     void epilogue() {
       // restore r15..r12
@@ -135,6 +137,8 @@ namespace mplx::jit {
     void mov_rax_rdx() { buf.emit_u8(0x48); buf.emit_u8(0x89); buf.emit_u8(0xD0); }
     // test rax, rax
     void test_rax_rax() { buf.emit_u8(0x48); buf.emit_u8(0x85); buf.emit_u8(0xC0); }
+    // and rsp, imm8 (mask)
+    void and_rsp_imm8(uint8_t imm) { buf.emit_u8(0x48); buf.emit_u8(0x83); buf.emit_u8(0xE4); buf.emit_u8(imm); }
     // jmp/jz/jnz to label (rel32)
     void jmp_label(int label) { buf.emit_u8(0xE9); size_t at = buf.size(); buf.emit_u32(0); fixups.push_back(Fixup{at, label, Fixup::JMP}); }
     void jz_label(int label) { buf.emit_u8(0x0F); buf.emit_u8(0x84); size_t at = buf.size(); buf.emit_u32(0); fixups.push_back(Fixup{at, label, Fixup::JZ}); }
