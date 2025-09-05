@@ -243,11 +243,83 @@ namespace mplx::jit {
 
     X64Emitter e;
     e.prologue();
-    // If we ended on RET with a stack value, return it; otherwise default 0
+
+    // Two-pass prep: compute label ids for jump targets in this function
+    std::unordered_map<uint32_t, int> ip_to_label;
+    {
+      // leaders: function entry and all jump targets
+      auto record_label = [&](uint32_t target_ip) {
+        if (ip_to_label.find(target_ip) == ip_to_label.end()) {
+          int lid                 = e.create_label();
+          ip_to_label[target_ip] = lid;
+        }
+      };
+      record_label(fn.entry);
+      uint32_t sip = fn.entry;
+      while (sip < bc.code.size()) {
+        Op sop = (Op)bc.code[sip++];
+        if (sop == OP_JMP) {
+          uint32_t dst = read_u32(bc.code, sip);
+          record_label(dst);
+        } else if (sop == OP_JMP_IF_FALSE || sop == OP_JMP_IF_TRUE) {
+          uint32_t dst = read_u32(bc.code, sip);
+          record_label(dst);
+        } else if (sop == OP_CALL || sop == OP_PUSH_CONST || sop == OP_LOAD_LOCAL || sop == OP_STORE_LOCAL) {
+          (void)read_u32(bc.code, sip);
+        } else if (sop == OP_LOAD_LOCAL8 || sop == OP_STORE_LOCAL8) {
+          if (sip < bc.code.size()) ++sip;
+        }
+        if (sop == OP_RET || sop == OP_HALT) break;
+      }
+    }
+
+    // Second pass: bind labels as we reach their ips, and emit branches to labels
+    {
+      uint32_t gip = fn.entry;
+      while (gip < bc.code.size()) {
+        if (auto itl = ip_to_label.find(gip); itl != ip_to_label.end()) {
+          e.bind_label(itl->second);
+        }
+        Op gop = (Op)bc.code[gip++];
+        if (gop == OP_JMP) {
+          uint32_t dst = read_u32(bc.code, gip);
+          int lid      = ip_to_label[dst];
+          e.jmp_label(lid);
+          continue;
+        }
+        if (gop == OP_JMP_IF_FALSE) {
+          uint32_t dst = read_u32(bc.code, gip);
+          int lid      = ip_to_label[dst];
+          // Convention for now: test rax,rax (result of last calc) then jz
+          e.test_rax_rax();
+          e.jz_label(lid);
+          continue;
+        }
+        if (gop == OP_JMP_IF_TRUE) {
+          uint32_t dst = read_u32(bc.code, gip);
+          int lid      = ip_to_label[dst];
+          e.test_rax_rax();
+          e.jnz_label(lid);
+          continue;
+        }
+        // For v0 here, full opcode translation will be added. For now, fallthrough.
+        if (gop == OP_RET) break;
+        if (gop == OP_HALT) break;
+        // Skip immediates to keep stream aligned
+        if (gop == OP_PUSH_CONST || gop == OP_LOAD_LOCAL || gop == OP_STORE_LOCAL || gop == OP_CALL) {
+          (void)read_u32(bc.code, gip);
+        } else if (gop == OP_LOAD_LOCAL8 || gop == OP_STORE_LOCAL8) {
+          if (gip < bc.code.size()) ++gip;
+        }
+      }
+    }
+
+    // MVP: until full translation is ready, return computed constant/stack-top
     uint64_t result = st.empty() ? 0ull : (uint64_t)st.back();
     e.mov_rax_imm(result);
     e.epilogue();
     e.ret();
+    e.finalize_fixups();
 
     auto ex = plat::alloc_executable(e.buf.size());
     if (!ex.ptr)
