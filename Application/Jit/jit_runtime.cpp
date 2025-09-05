@@ -2,6 +2,7 @@
 #include "platform.hpp"
 #include "../mplx-vm/vm.hpp"
 #include <cstring>
+#include <stdexcept>
 
 namespace mplx::jit {
 
@@ -68,6 +69,19 @@ namespace mplx::jit {
   extern "C" long long vm_runtime_call(void *vm_state, uint32_t fnIndex) {
     auto *vm = reinterpret_cast<mplx::VM *>(vm_state);
     return vm->runByIndex(fnIndex);
+  }
+
+  extern "C" long long jit_runtime_call(void *vm_state, uint32_t fnIndex, uint32_t /*argc*/) {
+    auto *vm = reinterpret_cast<mplx::VM *>(vm_state);
+    return vm->runByIndex(fnIndex);
+  }
+
+  extern "C" void jit_runtime_trap_div0(void * /*vm_state*/) {
+    throw std::runtime_error("JIT trap: division by zero");
+  }
+
+  extern "C" long long jit_runtime_stub(void * /*vm_state*/, uint32_t /*opcode*/, uint64_t /*a0*/, uint64_t /*a1*/) {
+    return 0;
   }
 
 
