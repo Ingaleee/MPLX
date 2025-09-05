@@ -313,6 +313,135 @@ namespace mplx::jit {
           e.jnz_label(lid);
           continue;
         }
+        if (gop == OP_PUSH_CONST) {
+          uint32_t ci = read_u32(bc.code, gip);
+          uint64_t imm = (ci < bc.consts.size()) ? (uint64_t)bc.consts[ci] : 0ull;
+          e.mov_rax_imm(imm);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
+        if (gop == OP_POP) {
+          // pop TOS: dec sp
+          e.dec_r12();
+          continue;
+        }
+        if (gop == OP_NEG) {
+          // a = pop(); push(-a)
+          e.dec_r12();
+          e.mov_rax_m_r13_r12_s8_disp32(0);
+          // rax = -rax -> two's complement: neg rax (opcode F7 D8)
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0xF7); e.buf.emit_u8(0xD8);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
+        auto emit_binop = [&](uint8_t which){
+          // pop b, pop a, rax = a op b, push rax
+          e.dec_r12();
+          e.mov_rbx_m_r13_r12_s8_disp32(0);
+          e.dec_r12();
+          e.mov_rax_m_r13_r12_s8_disp32(0);
+          if (which == 0) { // add
+            e.add_rax_rbx();
+          } else if (which == 1) { // sub
+            e.sub_rax_rbx();
+          } else if (which == 2) { // mul
+            e.imul_rax_rbx();
+          } else if (which == 3) { // div
+            e.cqo();
+            e.idiv_rbx();
+          } else if (which == 4) { // mod -> rdx
+            e.cqo();
+            e.idiv_rbx();
+            e.mov_rax_rdx();
+          }
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+        };
+        if (gop == OP_ADD) { emit_binop(0); continue; }
+        if (gop == OP_SUB) { emit_binop(1); continue; }
+        if (gop == OP_MUL) { emit_binop(2); continue; }
+        if (gop == OP_DIV) { emit_binop(3); continue; }
+        if (gop == OP_MOD) { emit_binop(4); continue; }
+
+        auto emit_cmp = [&](uint8_t which){
+          // pop b, pop a, rax = (a ? b) -> setcc to al, zero-extend
+          e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
+          e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
+          // cmp rax, rbx
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x39); e.buf.emit_u8(0xD8);
+          // setcc al
+          uint8_t cc = 0x94; // setz as base
+          switch (which) {
+            case 0: cc = 0x94; break; // EQ: sete
+            case 1: cc = 0x95; break; // NE: setne
+            case 2: cc = 0x9C; break; // LT: setl
+            case 3: cc = 0x9E; break; // LE: setle
+            case 4: cc = 0x9F; break; // GT: setg
+            case 5: cc = 0x9D; break; // GE: setge
+          }
+          e.buf.emit_u8(0x0F); e.buf.emit_u8(cc); e.buf.emit_u8(0xC0); // setcc al
+          // movzx rax, al
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+        };
+        if (gop == OP_EQ) { emit_cmp(0); continue; }
+        if (gop == OP_NE) { emit_cmp(1); continue; }
+        if (gop == OP_LT) { emit_cmp(2); continue; }
+        if (gop == OP_LE) { emit_cmp(3); continue; }
+        if (gop == OP_GT) { emit_cmp(4); continue; }
+        if (gop == OP_GE) { emit_cmp(5); continue; }
+
+        if (gop == OP_AND) {
+          // pop b, pop a, push((a!=0)&&(b!=0))
+          e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
+          e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
+          e.test_rax_rax(); e.buf.emit_u8(0x0F); e.buf.emit_u8(0x95); e.buf.emit_u8(0xC0); // setne al
+          // store temp a!=0 in al->rax 0/1
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          // test rbx,rbx ; setne bl ; and al, bl
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x85); e.buf.emit_u8(0xDB);
+          e.buf.emit_u8(0x0F); e.buf.emit_u8(0x95); e.buf.emit_u8(0xC3); // setne bl
+          e.buf.emit_u8(0x20); e.buf.emit_u8(0xC3); // and bl, al (wrong order), fix: and al, bl
+          // Correct and al, bl
+          e.buf.emit_u8(0x20); e.buf.emit_u8(0xD8); // and al, bl
+          // movzx rax, al
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
+        if (gop == OP_OR) {
+          e.dec_r12(); e.mov_rbx_m_r13_r12_s8_disp32(0);
+          e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
+          e.test_rax_rax(); e.buf.emit_u8(0x0F); e.buf.emit_u8(0x95); e.buf.emit_u8(0xC0); // setne al
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x85); e.buf.emit_u8(0xDB); // test rbx,rbx
+          e.buf.emit_u8(0x0F); e.buf.emit_u8(0x95); e.buf.emit_u8(0xC3); // setne bl
+          // or al, bl
+          e.buf.emit_u8(0x08); e.buf.emit_u8(0xD8);
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          e.mov_m_r13_r12_s8_disp32_rax(0);
+          e.inc_r12();
+          continue;
+        }
+        if (gop == OP_NOT) {
+          e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
+          e.test_rax_rax();
+          // setz al ; movzx rax, al
+          e.buf.emit_u8(0x0F); e.buf.emit_u8(0x94); e.buf.emit_u8(0xC0);
+          e.buf.emit_u8(0x48); e.buf.emit_u8(0x0F); e.buf.emit_u8(0xB6); e.buf.emit_u8(0xC0);
+          e.mov_m_r13_r12_s8_disp32_rax(0); e.inc_r12();
+          continue;
+        }
+        if (gop == OP_RET) {
+          // rax = pop(); persist sp_index back to VM; epilogue+ret
+          e.dec_r12(); e.mov_rax_m_r13_r12_s8_disp32(0);
+          e.mov_m_rcx_disp32_r12(off_sp_index);
+          break;
+        }
         // For v0 here, full opcode translation will be added. For now, fallthrough.
         if (gop == OP_RET) break;
         if (gop == OP_HALT) break;
