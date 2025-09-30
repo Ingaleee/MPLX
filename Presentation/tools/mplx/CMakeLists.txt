@@ -8,3 +8,7 @@ target_link_libraries(mplx PRIVATE mplx-lang mplx-compiler mplx-vm)
 if (MINGW)
   target_link_options(mplx PRIVATE -static -static-libstdc++ -static-libgcc)
 endif()
+
+target_compile_definitions(mplx PRIVATE
+  $<$<BOOL:${MPLX_WITH_JIT}>:MPLX_WITH_JIT=1>
+)

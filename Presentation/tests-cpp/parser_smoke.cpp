@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
 #include "../src-cpp/mplx-lang/lexer.hpp"
 #include "../src-cpp/mplx-lang/parser.hpp"
+#include <gtest/gtest.h>
 
-TEST(Parser, Smoke){
-  const char* src = "fn main() -> i32 { let x = 1 + 2; return x; }";
+TEST(Parser, Smoke) {
+  const char *src = "fn main() -> i32 { let x = 1 + 2; return x; }";
   mplx::Lexer lx(src);
   auto toks = lx.Lex();
   mplx::Parser ps(std::move(toks));
@@ -12,5 +12,3 @@ TEST(Parser, Smoke){
   ASSERT_FALSE(m.functions.empty());
   EXPECT_EQ(m.functions[0].name, "main");
 }
-
-

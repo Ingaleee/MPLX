@@ -1,4 +1,35 @@
-﻿build/
+﻿# Build directories
+build/
+
+# Generated outputs
+out/
+
+# CLI generated helper files
+help.txt
+ver.txt
+check.json
+bench.json
+
+# Ad-hoc benchmark and run outputs in repo root
+bench_*.txt
+*__run.txt
+*_run.txt
+*_jit.txt
+sum_run.txt
+sum_jit.txt
+loop_run.txt
+loop_error.txt
+test_output.txt
+run.txt
+
+# OS/editor noise
+*.log
+*.tmp
+*.tmp.*
+*.swp
+*.DS_Store
+
+build/
 .vs/
 .vscode/
 CMakeSettings.json

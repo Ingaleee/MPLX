@@ -1,0 +1,10 @@
+fn main() -> i64 {
+    let n = 1000;
+    let i = 0;
+    let s = 0;
+    while (i <= n) {
+        s = s + i;
+        i = i + 1;
+    }
+    return s;
+}
