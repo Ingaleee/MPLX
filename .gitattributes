@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.mplxb binary

@@ -38,6 +38,15 @@ CMakeUserPresets.json
 **/*.suo
 # Node
 node_modules/
+/Presentation/vscode-mplx/server/
+**/bin/
+**/obj/
+**/dist/
+*.dll
+*.so
+*.dylib
+*.exe
+*.pdb
 .pnpm-store/
 # Logs
 *.log
