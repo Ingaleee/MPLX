@@ -1,18 +1,43 @@
-# MPLX Clean Architecture Mapping
+# MPLX architecture
 
-- Domain: language primitives and contracts
-  - Targets: mplx-domain (interfaces) links to mplx-lang
-  - Ownership: AST, tokens, parsing contracts
-- Application: business rules (compile & execute)
-  - Targets: mplx-application links to mplx-compiler, mplx-vm
-  - Ownership: compilation strategies, optimizations, VM semantics
-- Infrastructure: external systems
-  - Targets: mplx-infrastructure links to mplx-orm, mplx-net, mplx-pkg, mplx-capi
-  - Ownership: SQLite/DB, networking (ASIO), packaging, native interop
-- Presentation: user interfaces
-  - Targets: mplx-presentation aggregates Domain+Application+Infrastructure
-  - Entry points: CLI (mplx), tools (mplx-net, mplx-netclient), LSP server, VS Code extension, .NET sample
+```text
+mplx-lang                       syntax / AST / source spans
+    ^
+mplx-compiler                   resolver / types / IR / lowerer / verifier
+    ^         ^
+mplx-vm       mplx-jit           bounded execution / native modules
+    ^              |
+    +--------------+
+    ^
+mplx CLI / mplx-capi (.NET)      commands / external ABI
+```
 
-Dependency rule: Presentation -> Application -> Domain; Infrastructure depends on Domain but not vice versa. Application must not depend on Infrastructure.
+CMake enforces direct core-library dependencies in cmake/Architecture.cmake.
+Native code consumes bytecode verification contracts and an explicit context;
+it does not depend on VM layout. VerifiedModule owns immutable bytecode/facts;
+CompiledProgram owns shared native publication and its RX mapping. Independent
+VMs retain the program and own stacks/counters/budgets; execution owns an arena
+of language frames. C callers own returned
+strings until mplx_free.
 
-This layer mapping is non-invasive: existing concrete targets remain unchanged; aggregate interface targets provide architectural boundaries and can be used by tooling and CI checks.
+The compiler service exports source-spanned symbol identities. The TypeScript
+LSP owns immutable document versions and converts byte offsets into UTF-16
+positions. The extension owns and disposes its LanguageClient; the server owns
+and disposes its compiler process. No temporary source files participate.
+
+WorkspaceCompiler owns canonical file loading, graph traversal and bounded
+parsed/interface caches. Module checks resolve only explicit imported exports;
+linking replaces signature prototypes with actual whole-program IR indexes.
+Source overlays never write to disk. The LSP's root-scoped index shares compiler
+facts, uses watcher/document generations and validates multi-file rename through
+proposed overlays before returning versioned edits. Persistent C/.NET workspaces
+reuse the compiler cache while result programs retain independent runtime lifetime.
+
+The portable reader bounds all section metadata before allocation and invokes
+verification before constructing a program. C instance handles reject concurrent
+invokes on one instance; .NET SafeHandle retains native lifetime during calls.
+
+See docs/adr for verification, typed IR, native calls, LSP, shared ownership and
+portable format decisions.
+The architecture/layers aggregations are historical; the concrete CMake target
+graph establishes the enforced boundaries.

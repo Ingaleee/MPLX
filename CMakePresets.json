@@ -1,40 +1,186 @@
-﻿{
-  "version": 3,
-  "configurePresets": [
-    {
-      "name": "dev",
-      "displayName": "Development",
-      "description": "Development build",
-      "binaryDir": "${sourceDir}/build/dev",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_FLAGS": "-std=c++20"
-      }
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 26,
+        "patch": 0
     },
-    {
-      "name": "dev-msvc",
-      "displayName": "Development MSVC",
-      "description": "Development build with MSVC",
-      "binaryDir": "${sourceDir}/build/dev-msvc",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_FLAGS": "/std:c++20"
-      },
-      "generator": "Ninja",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "dev",
-      "configurePreset": "dev"
-    },
-    {
-      "name": "dev-msvc",
-      "configurePreset": "dev-msvc"
-    }
-  ]
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "MPLX_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "dev",
+            "inherits": "base",
+            "displayName": "Portable development"
+        },
+        {
+            "name": "dev-msvc",
+            "inherits": "base",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "jit",
+            "inherits": "base",
+            "cacheVariables": {
+                "MPLX_WITH_JIT": "ON"
+            }
+        },
+        {
+            "name": "asan",
+            "inherits": "base",
+            "generator": "Ninja",
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "MPLX_SANITIZERS": "ON"
+            }
+        },
+        {
+            "name": "fuzz",
+            "inherits": "base",
+            "generator": "Ninja",
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang++",
+                "MPLX_BUILD_FUZZERS": "ON",
+                "MPLX_BUILD_TESTS": "OFF",
+                "CMAKE_C_COMPILER": "clang"
+            }
+        },
+        {
+            "name": "tsan",
+            "inherits": "base",
+            "generator": "Ninja",
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "MPLX_THREAD_SANITIZER": "ON",
+                "MPLX_WITH_JIT": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dev",
+            "configurePreset": "dev",
+            "configuration": "Debug"
+        },
+        {
+            "name": "dev-msvc",
+            "configurePreset": "dev-msvc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "configuration": "Release"
+        },
+        {
+            "name": "jit",
+            "configurePreset": "jit",
+            "configuration": "Debug"
+        },
+        {
+            "name": "asan",
+            "configurePreset": "asan",
+            "configuration": "Debug"
+        },
+        {
+            "name": "fuzz",
+            "configurePreset": "fuzz",
+            "configuration": "Debug"
+        },
+        {
+            "name": "tsan",
+            "configurePreset": "tsan",
+            "configuration": "Debug"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "dev",
+            "configurePreset": "dev",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "dev-msvc",
+            "configurePreset": "dev-msvc",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "jit",
+            "configurePreset": "jit",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "asan",
+            "configurePreset": "asan",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "tsan",
+            "configurePreset": "tsan",
+            "configuration": "Debug",
+            "filter": {
+                "include": {
+                    "name": "shared-program|embedding-contexts"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
 }

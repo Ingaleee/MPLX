@@ -1,1 +1,1 @@
-﻿add_executable(mplx-pkg-tool main.cpp)
+add_executable(mplx-pkg-tool main.cpp)

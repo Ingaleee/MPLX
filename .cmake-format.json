@@ -1,0 +1,14 @@
+{
+    "format": {
+        "line_width": 110,
+        "tab_size": 4,
+        "use_tabchars": false,
+        "command_case": "lower",
+        "keyword_case": "unchanged",
+        "dangle_parens": true,
+        "line_ending": "unix"
+    },
+    "markup": {
+        "enable_markup": false
+    }
+}

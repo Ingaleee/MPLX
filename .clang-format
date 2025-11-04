@@ -1,12 +1,17 @@
 BasedOnStyle: LLVM
-IndentWidth: 2
-TabWidth: 2
+IndentWidth: 4
+TabWidth: 4
 UseTab: Never
-ColumnLimit: 0
+ColumnLimit: 110
 NamespaceIndentation: All
-AlignConsecutiveAssignments: true
-AllowShortFunctionsOnASingleLine: Empty
+AlignConsecutiveAssignments: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
 BreakBeforeBraces: Attach
 SpacesInParentheses: false
 SpaceBeforeParens: ControlStatements
-
+ReflowComments: false
+SortIncludes: Never

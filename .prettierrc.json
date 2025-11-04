@@ -1,0 +1,24 @@
+{
+    "tabWidth": 4,
+    "useTabs": false,
+    "printWidth": 110,
+    "endOfLine": "lf",
+    "singleQuote": true,
+    "trailingComma": "all",
+    "proseWrap": "preserve",
+    "embeddedLanguageFormatting": "auto",
+    "plugins": ["@prettier/plugin-xml", "prettier-plugin-sh"],
+    "overrides": [
+        {
+            "files": ["*.csproj", "NuGet.Config"],
+            "options": {
+                "parser": "xml",
+                "xmlWhitespaceSensitivity": "ignore"
+            }
+        },
+        {
+            "files": ".clang-format",
+            "options": { "parser": "yaml" }
+        }
+    ]
+}

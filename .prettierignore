@@ -1,0 +1,9 @@
+build/
+out/
+node_modules/
+**/node_modules/
+**/bin/
+**/obj/
+**/dist/
+Presentation/vscode-mplx/server/
+Presentation/fuzz/corpus/

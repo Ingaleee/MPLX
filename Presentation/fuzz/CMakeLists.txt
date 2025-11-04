@@ -1,0 +1,5 @@
+foreach(name source bytecode module workspace ir snapshot)
+    add_executable(mplx-fuzz-${name} fuzz_${name}.cpp)
+    target_link_libraries(mplx-fuzz-${name} PRIVATE mplx-vm mplx-reference)
+    target_link_options(mplx-fuzz-${name} PRIVATE -fsanitize=fuzzer,address,undefined)
+endforeach()

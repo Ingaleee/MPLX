@@ -16,5 +16,3 @@ target_link_libraries(mplx-infrastructure INTERFACE mplx-orm mplx-net mplx-pkg m
 # Note: executables are defined elsewhere; this interface exists for dependency grouping
 add_library(mplx-presentation INTERFACE)
 target_link_libraries(mplx-presentation INTERFACE mplx-domain mplx-application mplx-infrastructure)
-
-

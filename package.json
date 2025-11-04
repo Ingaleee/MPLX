@@ -1,0 +1,16 @@
+{
+    "name": "mplx-development-tools",
+    "version": "0.6.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "format": "node scripts/format.mjs",
+        "format:check": "node scripts/format.mjs --check",
+        "contracts:check": "node scripts/conformance.mjs --check && node scripts/roadmap.mjs --check"
+    },
+    "devDependencies": {
+        "@prettier/plugin-xml": "3.4.2",
+        "prettier": "3.9.10",
+        "prettier-plugin-sh": "0.20.2"
+    }
+}
