@@ -1,6 +1,8 @@
 fn fib() -> i64 {
     let n = 45;
-    if (n <= 1) { return n; }
+    if (n <= 1) {
+        return n;
+    }
     let a = 0;
     let b = 1;
     let i = 2;
@@ -16,5 +18,3 @@ fn fib() -> i64 {
 fn main() -> i64 {
     return fib();
 }
-
-

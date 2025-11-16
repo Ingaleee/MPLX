@@ -1,4 +1,4 @@
-﻿namespace Mplx.Compiler;
+namespace Mplx.Compiler;
 
 public class Class1
 {

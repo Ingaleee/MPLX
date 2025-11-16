@@ -12,5 +12,3 @@ fn sum() -> i64 {
 fn main() -> i64 {
     return sum();
 }
-
-

@@ -5,7 +5,8 @@ Write-Host "=== Building MPLX C API DLL with MSVC ===" -ForegroundColor Green
 $vcvarsPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 if (Test-Path $vcvarsPath) {
     Write-Host "Found MSVC Build Tools 2019" -ForegroundColor Yellow
-} else {
+}
+else {
     Write-Host "MSVC Build Tools not found at: $vcvarsPath" -ForegroundColor Red
     Write-Host "Please install Visual Studio Build Tools 2019 or later" -ForegroundColor Red
     exit 1
@@ -22,7 +23,7 @@ Write-Host "Compiling C API with MSVC..." -ForegroundColor Yellow
 
 $sourceFiles = @(
     "Infrastructure\mplx-capi\capi.cpp",
-    "Application\mplx-compiler\compiler.cpp", 
+    "Application\mplx-compiler\compiler.cpp",
     "Application\mplx-vm\vm.cpp",
     "Domain\mplx-lang\lexer.cpp",
     "Domain\mplx-lang\parser.cpp"
@@ -31,7 +32,7 @@ $sourceFiles = @(
 $includeDirs = @(
     "Infrastructure\mplx-capi",
     "Application\mplx-compiler",
-    "Application\mplx-vm", 
+    "Application\mplx-vm",
     "Domain\mplx-lang"
 )
 
@@ -50,11 +51,11 @@ $objectFiles = @()
 foreach ($sourceFile in $sourceFiles) {
     $objFile = "$buildDir\" + [System.IO.Path]::GetFileNameWithoutExtension($sourceFile) + ".obj"
     $objectFiles += $objFile
-    
+
     $compileCmd = "cl.exe /c /std:c++20 $includeFlags `"$sourceFile`" /Fo:`"$objFile`""
     Write-Host "Compiling: $sourceFile" -ForegroundColor Gray
     & cmd /c $compileCmd
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Compilation failed for: $sourceFile" -ForegroundColor Red
         exit 1
@@ -71,13 +72,14 @@ $linkCmd = "link.exe /DLL $objFlags /OUT:`"$buildDir\mplx_native.dll`""
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ DLL built successfully!" -ForegroundColor Green
     Write-Host "DLL location: $buildDir\mplx_native.dll" -ForegroundColor Green
-    
+
     # Copy to .NET project
     Copy-Item "$buildDir\mplx_native.dll" "Infrastructure\Mplx.DotNet\" -Force
     Copy-Item "$buildDir\mplx_native.dll" "Presentation\Mplx.DotNet.Sample\" -Force
-    
+
     Write-Host "✅ DLL copied to .NET projects" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ DLL linking failed!" -ForegroundColor Red
     exit 1
 }

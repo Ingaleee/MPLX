@@ -21,7 +21,7 @@ fn power(base: i32, exp: i32) -> i32 {
 fn complex_calc(a: i32, b: i32, c: i32) -> i32 {
     let temp1 = a + b;
     let temp2 = temp1 * c;
-    
+
     if (temp2 > 100) {
         let result = temp2 / 2;
         return result;
@@ -39,7 +39,7 @@ fn main() -> i32 {
     let fact_result = factorial(5);
     let pow_result = power(2, 8);
     let calc_result = complex_calc(10, 5, 3);
-    
+
     let final_result = fact_result + pow_result + calc_result;
     return final_result;
 }

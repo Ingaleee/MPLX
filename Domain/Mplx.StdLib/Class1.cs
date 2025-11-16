@@ -1,4 +1,4 @@
-﻿namespace Mplx.StdLib;
+namespace Mplx.StdLib;
 
 public class Class1
 {

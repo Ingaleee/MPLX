@@ -1,4 +1,4 @@
-﻿namespace Mplx.Language;
+namespace Mplx.Language;
 
 public class Class1
 {

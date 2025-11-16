@@ -1,4 +1,4 @@
-﻿namespace Mplx.VM;
+namespace Mplx.VM;
 
 public class Class1
 {
