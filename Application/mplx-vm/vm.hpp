@@ -1,86 +1,129 @@
-﻿#pragma once
-#include "../mplx-compiler/bytecode.hpp"
+#pragma once
+#include "bytecode.hpp"
+#include "program.hpp"
+#include "verifier.hpp"
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
-#include <memory>
 #include <vector>
-
-namespace mplx {
-
-  struct VMValue {
-    long long i;
-  };
-
-  struct CallFrame {
-    uint32_t ip;
-    uint32_t fn;
-    uint32_t bp;
-    uint8_t arity;
-    uint16_t locals;
-  };
-
-  class VM {
-  public:
-    explicit VM(const Bytecode &bc) : bc_(bc) {}
-    long long run(const std::string &entry = "main");
-    // v0 JIT helper: run by function index (no argument marshalling beyond VM's own stack)
-    long long runByIndex(uint32_t fnIndex);
-    // JIT mode
-    enum class JitMode { Off, On, Auto };
-    void setJitMode(JitMode m) { jit_mode_ = m; }
-    void setHotThreshold(uint32_t t) { hot_threshold_ = t; }
-    JitMode jitMode() const { return jit_mode_; }
-
-    // Trace controls (no-op if not used by caller)
-    void setTrace(bool enabled) { trace_enabled_ = enabled; }
-    void setTraceLimit(uint64_t limit) { trace_limit_ = limit; }
-    bool isTraceEnabled() const { return trace_enabled_; }
-    uint64_t traceLimit() const { return trace_limit_; }
-
-    // Minimal ABI snapshot for JIT codegen (stable layout)
-    struct JitVmState {
-      long long *stack_ptr{nullptr};
-      uint64_t sp_index{0};
-      uint64_t bp_index{0};
-    };
-    const JitVmState &jitState() const { return jit_state_; }
-
-  private:
-    const Bytecode &bc_;
-    std::vector<VMValue> stack_;
-    std::vector<CallFrame> frames_;
-    uint32_t ip_{0};
-    JitVmState jit_state_{};
-    JitMode jit_mode_{JitMode::Auto};
-    uint32_t hot_threshold_{1};
-    bool trace_enabled_{false};
-    uint64_t trace_limit_{0};
-
 #if defined(MPLX_WITH_JIT)
-    // JIT placeholders for future integration
-    // e.g., pointers to compiled entries cache, runtime helpers
-  public:
-    using JitEntryPtr = long long (*)(void *);
-    std::unordered_map<uint32_t, JitEntryPtr> jitted_;
-    std::unordered_map<uint32_t, std::unique_ptr<uint8_t[]>> jit_mem_;
-
-  private:
+#include "../Jit/jit_compiler.hpp"
 #endif
 
-    void push(long long x) {
-      stack_.push_back(VMValue{x});
-      // keep ABI state in sync
-      jit_state_.stack_ptr = (stack_.empty() ? nullptr : &stack_[0].i);
-      jit_state_.sp_index  = (uint64_t)stack_.size();
-    }
-    long long pop() {
-      auto v = stack_.back().i;
-      stack_.pop_back();
-      jit_state_.stack_ptr = (stack_.empty() ? nullptr : &stack_[0].i);
-      jit_state_.sp_index  = (uint64_t)stack_.size();
-      return v;
-    }
-  };
+namespace mplx {
+    enum class RuntimeErrorCode {
+        InvalidEntry,
+        InstructionLimit,
+        FrameLimit,
+        ValueLimit,
+        Cancelled,
+        Arithmetic,
+        InvalidState
+    };
+    class RuntimeError : public std::runtime_error {
+      public:
+        RuntimeError(RuntimeErrorCode code, std::string message, std::string function, uint32_t pc,
+                     SourceSpan span = {});
+        RuntimeErrorCode code() const {
+            return code_;
+        }
+        const std::string &function() const {
+            return function_;
+        }
+        uint32_t pc() const {
+            return pc_;
+        }
+        SourceSpan span() const {
+            return span_;
+        }
 
+      private:
+        RuntimeErrorCode code_;
+        std::string function_;
+        uint32_t pc_;
+        SourceSpan span_;
+    };
+    struct ExecutionLimits {
+        uint64_t instructions{10'000'000};
+        size_t frames{1024}, values{1'000'000};
+    };
+    struct ExecutionStats {
+        uint64_t instructions{0}, peak_operands{0}, peak_locals{0}, peak_frames{0};
+        uint64_t jit_compilations{0}, jit_executions{0}, jit_fallbacks{0};
+        uint64_t native_calls{0};
+    };
+    class VM {
+      public:
+        // Own a snapshot: verification cannot be invalidated by caller mutation.
+        explicit VM(Bytecode bc);
+        explicit VM(std::shared_ptr<const CompiledProgram> program);
+        VM(const VM &) = delete;
+        VM &operator=(const VM &) = delete;
+        long long run(const std::string &entry = "main", std::span<const long long> arguments = {});
+        long long runByIndex(uint32_t fnIndex, std::span<const long long> arguments = {});
+        enum class JitMode { Off, On, Auto };
+        void setJitMode(JitMode mode) {
+            jit_mode_ = mode;
+        }
+        JitMode jitMode() const {
+            return jit_mode_;
+        }
+        void setHotThreshold(uint32_t value) {
+            hot_threshold_ = value ? value : 1;
+        }
+        void setTrace(bool enabled) {
+            trace_enabled_ = enabled;
+        }
+        void setTraceLimit(uint64_t limit) {
+            trace_limit_ = limit;
+        }
+        bool isTraceEnabled() const {
+            return trace_enabled_;
+        }
+        uint64_t traceLimit() const {
+            return trace_limit_;
+        }
+        void setLimits(ExecutionLimits limits) {
+            limits_ = limits;
+        }
+        void setCancellationFlag(const std::atomic_bool *flag) {
+            cancellation_ = flag;
+        }
+        const ExecutionStats &stats() const {
+            return stats_;
+        }
+
+      private:
+        struct Frame {
+            uint32_t return_ip, function;
+            size_t operand_base, local_base;
+        };
+        const std::shared_ptr<const CompiledProgram> program_;
+        const Bytecode &bc_;
+        const VerificationResult &verified_;
+        std::vector<long long> operands_, locals_;
+        std::vector<Frame> frames_;
+        uint32_t ip_{0}, current_pc_{0};
+        ExecutionLimits limits_;
+        ExecutionStats stats_;
+        const std::atomic_bool *cancellation_{nullptr};
+        JitMode jit_mode_{JitMode::Auto};
+        uint32_t hot_threshold_{1};
+        bool trace_enabled_{false};
+        uint64_t trace_limit_{0};
+#if defined(MPLX_WITH_JIT)
+        std::vector<uint32_t> hot_counts_;
+#endif
+        long long execute(uint32_t function, std::span<const long long> arguments);
+        long long interpret();
+        void enter(uint32_t function, uint32_t return_ip);
+        void push(long long value);
+        long long pop();
+        void reset();
+        SourceSpan sourceSpan(uint32_t pc) const;
+        [[noreturn]] void fail(RuntimeErrorCode code, const std::string &message) const;
+    };
 } // namespace mplx
