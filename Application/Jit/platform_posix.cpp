@@ -1,33 +1,28 @@
 #include "platform.hpp"
-#if MPLX_POSIX
-#include <cstring>
+#if !defined(_WIN32)
+#include <limits>
 #include <sys/mman.h>
 #include <unistd.h>
-
 namespace mplx::jit::plat {
-
-  ExecMem alloc_executable(size_t size) {
-    ExecMem m;
-    m.size        = size;
-    long pagesize = sysconf(_SC_PAGESIZE);
-    size_t alloc  = ((size + pagesize - 1) / pagesize) * pagesize;
-    void *p       = ::mmap(nullptr, alloc, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (p == MAP_FAILED)
-      return {};
-    m.ptr  = p;
-    m.size = alloc;
-    return m;
-  }
-
-  void free_executable(ExecMem &m) {
-    if (m.ptr) {
-      ::munmap(m.ptr, m.size);
-      m.ptr  = nullptr;
-      m.size = 0;
+    ExecMem alloc_writable(size_t size) {
+        auto page = sysconf(_SC_PAGESIZE);
+        if (page <= 0 || !size || size > std::numeric_limits<size_t>::max() - static_cast<size_t>(page))
+            return {};
+        auto rounded = (size + page - 1) / page * page;
+        auto *ptr = mmap(nullptr, rounded, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        return ptr == MAP_FAILED ? ExecMem{} : ExecMem{ptr, rounded};
     }
-  }
-
-  void flush_icache(void * /*p*/, size_t /*n*/) { /* most POSIX CPUs have coherent I-cache */ }
-
+    bool seal_executable(const ExecMem &memory) {
+        if (!memory.ptr || mprotect(memory.ptr, memory.size, PROT_READ | PROT_EXEC) != 0)
+            return false;
+        __builtin___clear_cache(static_cast<char *>(memory.ptr),
+                                static_cast<char *>(memory.ptr) + memory.size);
+        return true;
+    }
+    void free_executable(ExecMem &memory) {
+        if (memory.ptr)
+            munmap(memory.ptr, memory.size);
+        memory = {};
+    }
 } // namespace mplx::jit::plat
 #endif
