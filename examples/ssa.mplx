@@ -1,0 +1,16 @@
+// Loop-carried swaps require simultaneous phi copies. The default pipeline
+// promotes a, b and i to SSA; the native backend caches values in CPU registers.
+fn rotate(a: i64, b: i64, count: i64) -> i64 {
+    let i = 0;
+    while (i < count) {
+        let previous = a;
+        a = b;
+        b = previous;
+        i = i + 1;
+    }
+    return a * 10 + b;
+}
+
+fn main() -> i64 {
+    return rotate(2, 4, 5);
+}
