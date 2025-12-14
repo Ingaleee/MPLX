@@ -1,0 +1,13 @@
+// Exported host functions: independent requests share the compiled program.
+fn transform(value: i64, scale: i32, enabled: bool) -> i64 {
+    if (!enabled) {
+        return value;
+    }
+    return value * i64(scale);
+}
+fn classify(value: i64, threshold: i64) -> bool {
+    return value >= threshold;
+}
+fn main() -> i64 {
+    return transform(21, 2, true);
+}
