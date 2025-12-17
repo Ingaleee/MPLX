@@ -1,0 +1,8 @@
+import "math.mplx" as math;
+
+export fn process(value: i64, factor: i32, enabled: bool) -> i64 {
+    if (!enabled) {
+        return value;
+    }
+    return math::multiply(value, factor);
+}

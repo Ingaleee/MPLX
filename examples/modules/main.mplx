@@ -1,0 +1,5 @@
+import "pipeline.mplx" as pipeline;
+
+fn main() -> i64 {
+    return pipeline::process(21, 2, true);
+}

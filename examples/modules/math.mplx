@@ -1,0 +1,7 @@
+fn checked_product(value: i64, factor: i64) -> i64 {
+    return value * factor;
+}
+
+export fn multiply(value: i64, factor: i32) -> i64 {
+    return checked_product(value, i64(factor));
+}

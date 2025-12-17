@@ -1,49 +1,26 @@
-﻿using System;
-using System.IO;
+using System.Globalization;
 using Mplx.DotNet;
-
-class Program
+if (args.Length < 1)
 {
-    static void Main(string[] args)
-    {
-        Console.WriteLine("=== MPLX .NET Integration Test ===");
-        Console.WriteLine();
-        
-        var file = args.Length > 0 ? args[0] : Path.Combine("..", "..", "Presentation", "examples", "hello.mplx");
-        
-        if (File.Exists(file))
-        {
-            var src = File.ReadAllText(file);
-            Console.WriteLine($"Source file: {file}");
-            Console.WriteLine($"Content length: {src.Length} characters");
-            Console.WriteLine();
-            Console.WriteLine("Source code:");
-            Console.WriteLine("```mplx");
-            Console.WriteLine(src);
-            Console.WriteLine("```");
-            Console.WriteLine();
-            
-            try {
-                Console.WriteLine("== Check ==");
-                var diag = MplxRuntime.CheckSource(src);
-                Console.WriteLine(diag);
-
-                Console.WriteLine("== Run ==");
-                var rv = MplxRuntime.RunFromSource(src, "main");
-                Console.WriteLine($"Return: {rv}");
-                
-                Console.WriteLine(".NET integration with native DLL working!");
-            }
-            catch (Exception ex) {
-                Console.WriteLine($"Native DLL issue: {ex.Message}");
-                Console.WriteLine(".NET project structure working!");
-                Console.WriteLine("Ready for full native integration!");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"File not found: {file}");
-            Console.WriteLine("Current directory: " + Directory.GetCurrentDirectory());
-        }
-    }
+    Console.Error.WriteLine("Usage: Mplx.DotNet.Sample <source.mplx|module.mplxb> [entry] [i64 arguments...]");
+    return 2;
+}
+try
+{
+    using var program = Path.GetExtension(args[0]) == ".mplxb"
+        ? MplxProgram.Load(File.ReadAllBytes(args[0]))
+        : MplxProgram.CompileFile(args[0]);
+    Console.WriteLine(program.InfoJson);
+    using var instance = program.CreateInstance(MplxJitMode.Auto, cancellable: false);
+    var values = args.Skip(2).Select(v => long.Parse(v, CultureInfo.InvariantCulture)).ToArray();
+    var result = instance.Invoke(args.Length > 1 ? args[1] : "main", values,
+        new(MaxInstructions: 1_000_000));
+    Console.WriteLine($"Result: {result.Result}");
+    Console.Error.WriteLine($"Instructions: {result.Stats.Instructions}; native executions: {result.Stats.JitExecutions}");
+    return 0;
+}
+catch (Exception error)
+{
+    Console.Error.WriteLine(error.Message);
+    return 1;
 }

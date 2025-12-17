@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RollForward>Major</RollForward>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../../Infrastructure/Mplx.DotNet/Mplx.DotNet.csproj" />
+        <None
+            Include="$(MplxNativePath)"
+            Link="$(MplxNativeFileName)"
+            CopyToOutputDirectory="PreserveNewest"
+            Condition="'$(MplxNativePath)' != ''"
+        />
+    </ItemGroup>
+    <Target Name="RequireFreshNativeLibrary" BeforeTargets="Build">
+        <Error
+            Condition="'$(MplxNativePath)' == '' or !Exists('$(MplxNativePath)')"
+            Text="Pass -p:MplxNativePath with the freshly built native library path."
+        />
+    </Target>
+</Project>
