@@ -1,27 +1,28 @@
-﻿{
-  "name": "mplx-lsp",
-  "version": "0.1.0",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "build": "tsc -p ."
-  },
-  "contributes": {
-    "configuration": {
-      "title": "MPLX",
-      "properties": {
-        "mplx.cliPath": {
-          "type": "string",
-          "default": "build/dev/src-cpp/tools/mplx/mplx",
-          "description": "Path to mplx CLI executable"
+{
+    "name": "mplx-lsp",
+    "version": "0.6.0",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "tsc -p .",
+        "test": "node tests/protocol.mjs"
+    },
+    "contributes": {
+        "configuration": {
+            "title": "MPLX",
+            "properties": {
+                "mplx.cliPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to mplx CLI executable"
+                }
+            }
         }
-      }
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.0",
+        "typescript": "^5.4.0",
+        "vscode-languageserver": "^9.0.1",
+        "vscode-languageserver-textdocument": "^1.0.11"
     }
-  },
-  "devDependencies": {
-    "typescript": "^5.4.0",
-    "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-textdocument": "^1.0.11",
-    "@types/node": "^20.14.0"
-  }
 }
