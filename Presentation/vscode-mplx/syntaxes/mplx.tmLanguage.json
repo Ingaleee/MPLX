@@ -1,0 +1,38 @@
+{
+    "scopeName": "source.mplx",
+    "name": "MPLX",
+    "patterns": [
+        {
+            "name": "comment.line.double-slash.mplx",
+            "match": "//.*$"
+        },
+        {
+            "name": "keyword.control.mplx",
+            "match": "\\b(fn|let|return|if|else|while|import|as|export)\\b"
+        },
+        {
+            "name": "string.quoted.double.import-path.mplx",
+            "match": "\"[^\"\\r\\n]*\""
+        },
+        {
+            "name": "constant.language.mplx",
+            "match": "\\b(true|false)\\b"
+        },
+        {
+            "name": "storage.type.mplx",
+            "match": "\\b(i32|i64|bool)\\b"
+        },
+        {
+            "name": "constant.numeric.integer.mplx",
+            "match": "\\b[0-9]+\\b"
+        },
+        {
+            "name": "keyword.operator.mplx",
+            "match": "==|!=|<=|>=|&&|\\|\\||[+*/%!=<>-]"
+        },
+        {
+            "name": "punctuation.section.mplx",
+            "match": "[(){}:,;]"
+        }
+    ]
+}
