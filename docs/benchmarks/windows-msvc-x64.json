@@ -1,0 +1,76 @@
+{
+    "schema_version": 1,
+    "recorded_at": "2026-10-12T20:36:18.897Z",
+    "environment": {
+        "platform": "win32",
+        "arch": "x64",
+        "os_release": "10.0.26200",
+        "cpu": "Intel(R) Core(TM) Ultra 9 185H",
+        "logical_cpus": 22
+    },
+    "command": {
+        "binary": "build/release/bin/mplx.exe",
+        "source": "examples/native_loop.mplx",
+        "runs": 50,
+        "warmup": 5
+    },
+    "source_sha256": "9ddc176a1443ecc58523e8a2dcc4b46182a7f69ebac429d7cb9e86be90a1959e",
+    "interpreter": {
+        "schema_version": 1,
+        "file": "examples/native_loop.mplx",
+        "mode": "run-only",
+        "runs": 50,
+        "warmup": 5,
+        "result": 50005000,
+        "optimized": true,
+        "requested_jit": "off",
+        "native_runs": 0,
+        "jit_compilations": 0,
+        "native_calls": 0,
+        "version": "0.4.0",
+        "avg_ms": 6.134832,
+        "best_ms": 5.0487,
+        "worst_ms": 8.9464,
+        "p50_ms": 5.9514,
+        "p95_ms": 7.624025,
+        "compiler": "MSVC 1944",
+        "build_type": "Release",
+        "samples_ms": [
+            5.6663, 6.582, 5.7312, 7.5913, 5.977, 5.7266, 6.8341, 6.6183, 5.6919, 6.0601, 6.254, 6.5238,
+            6.395, 6.3383, 6.132, 5.9533, 8.7228, 7.6508, 5.7541, 5.6423, 5.175, 5.2501, 5.2316, 5.0487,
+            5.3989, 6.123, 5.256, 5.8284, 5.5176, 5.1076, 7.1286, 5.7536, 6.0002, 8.9464, 5.9495, 7.4618,
+            5.4334, 5.3314, 5.8999, 5.9356, 6.9816, 6.0436, 5.6823, 6.0815, 5.7192, 6.6211, 5.9832, 5.7807,
+            6.4287, 5.7972
+        ]
+    },
+    "native": {
+        "schema_version": 1,
+        "file": "examples/native_loop.mplx",
+        "mode": "run-only",
+        "runs": 50,
+        "warmup": 5,
+        "result": 50005000,
+        "optimized": true,
+        "requested_jit": "on",
+        "native_runs": 50,
+        "jit_compilations": 0,
+        "native_calls": 0,
+        "version": "0.4.0",
+        "avg_ms": 0.266266,
+        "best_ms": 0.2347,
+        "worst_ms": 0.5408,
+        "p50_ms": 0.2393,
+        "p95_ms": 0.34131,
+        "compiler": "MSVC 1944",
+        "build_type": "Release",
+        "samples_ms": [
+            0.253, 0.2579, 0.2637, 0.264, 0.2625, 0.5408, 0.2675, 0.2654, 0.2653, 0.2686, 0.4591, 0.2774,
+            0.2876, 0.2772, 0.2766, 0.3335, 0.2372, 0.282, 0.2369, 0.316, 0.2491, 0.3169, 0.2717, 0.2358,
+            0.2491, 0.2362, 0.3477, 0.2359, 0.2351, 0.2349, 0.2348, 0.2348, 0.2395, 0.2349, 0.2348, 0.2359,
+            0.2347, 0.2347, 0.2347, 0.2347, 0.2391, 0.2349, 0.2348, 0.3303, 0.2355, 0.2351, 0.2363, 0.2355,
+            0.2388, 0.2349
+        ]
+    },
+    "native_comparison_valid": true,
+    "median_ratio": 24.87003760969494
+}

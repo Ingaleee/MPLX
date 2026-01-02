@@ -1,0 +1,76 @@
+{
+    "schema_version": 1,
+    "recorded_at": "2026-10-12T20:36:20.979Z",
+    "environment": {
+        "platform": "win32",
+        "arch": "x64",
+        "os_release": "10.0.26200",
+        "cpu": "Intel(R) Core(TM) Ultra 9 185H",
+        "logical_cpus": 22
+    },
+    "command": {
+        "binary": "build/release/bin/mplx.exe",
+        "source": "examples/native_calls.mplx",
+        "runs": 50,
+        "warmup": 5
+    },
+    "source_sha256": "255444627a03f5cedeb43f4c51b3000a7744d3064106bb3bbb5c42d141c7b6d2",
+    "interpreter": {
+        "schema_version": 1,
+        "file": "examples/native_calls.mplx",
+        "mode": "run-only",
+        "runs": 50,
+        "warmup": 5,
+        "result": 17711,
+        "optimized": true,
+        "requested_jit": "off",
+        "native_runs": 0,
+        "jit_compilations": 0,
+        "native_calls": 0,
+        "version": "0.4.0",
+        "avg_ms": 32.719638,
+        "best_ms": 28.8023,
+        "worst_ms": 37.5858,
+        "p50_ms": 32.35055,
+        "p95_ms": 36.245235,
+        "compiler": "MSVC 1944",
+        "build_type": "Release",
+        "samples_ms": [
+            29.9947, 29.9742, 30.8946, 31.9531, 34.544, 30.9125, 33.7017, 33.6124, 33.6096, 34.6369, 37.538,
+            33.3372, 30.8993, 34.0269, 37.5858, 35.4928, 32.0215, 32.3248, 31.8144, 33.1731, 30.8988, 30.2541,
+            33.9561, 32.7194, 36.3261, 32.8046, 31.7579, 31.4218, 36.1464, 33.4999, 31.2873, 32.6171, 32.3267,
+            32.0227, 32.3689, 32.8549, 35.8067, 32.3322, 30.6848, 31.6447, 32.5009, 31.8136, 28.8023, 31.0808,
+            31.4923, 33.7107, 32.6053, 31.8201, 31.5939, 34.7834
+        ]
+    },
+    "native": {
+        "schema_version": 1,
+        "file": "examples/native_calls.mplx",
+        "mode": "run-only",
+        "runs": 50,
+        "warmup": 5,
+        "result": 17711,
+        "optimized": true,
+        "requested_jit": "on",
+        "native_runs": 50,
+        "jit_compilations": 0,
+        "native_calls": 2866300,
+        "version": "0.4.0",
+        "avg_ms": 3.31663,
+        "best_ms": 2.463,
+        "worst_ms": 6.1186,
+        "p50_ms": 3.1259,
+        "p95_ms": 4.557425,
+        "compiler": "MSVC 1944",
+        "build_type": "Release",
+        "samples_ms": [
+            3.4251, 2.81, 2.8794, 2.7758, 3.3367, 2.5623, 2.8645, 2.9951, 2.9697, 2.5499, 3.0494, 3.4766,
+            2.93, 2.5646, 2.7226, 2.8418, 4.216, 6.1186, 3.0232, 3.7271, 2.463, 2.8671, 2.6769, 2.972, 3.233,
+            3.744, 2.7698, 3.4137, 3.9727, 3.1676, 3.6016, 3.5498, 2.9662, 3.4023, 2.9755, 3.0185, 3.1636,
+            2.9887, 3.6954, 3.1155, 3.1913, 3.152, 3.1363, 4.6661, 2.5506, 4.2762, 5.4688, 3.8944, 4.4246,
+            3.4759
+        ]
+    },
+    "native_comparison_valid": true,
+    "median_ratio": 10.349195431715666
+}
