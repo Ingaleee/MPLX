@@ -1,0 +1,91 @@
+{
+    "schema_version": 1,
+    "date_moscow": "2026-10-13",
+    "scope": "ultimate-roadmap scalar compiler foundation package",
+    "status": "functional checks complete; new benchmark measurement pending",
+    "native_source_sha256": "6e7eeac9b6263b45b963e58e2a9af7a1a34e813226fc810227df60637ccb4a95",
+    "runs": [
+        {
+            "configuration": "windows-release-jit",
+            "test_suites_passed": 35,
+            "test_suites_failed": 0,
+            "seconds": 21.42,
+            "log_sha256": "87a35706f39cbbf820e0cbce33b665e9be6b3f5c9fb8b177ff74c8d48c654714",
+            "local_log": "build/foundations-windows-release.log"
+        },
+        {
+            "configuration": "windows-debug-no-jit",
+            "test_suites_passed": 34,
+            "test_suites_failed": 0,
+            "seconds": 70.08,
+            "log_sha256": "cbeba3705ea42de58a60a4c2f797df33e670f0ac61f2a2b675156da2d276b482",
+            "local_log": "build/foundations-windows-debug.log"
+        },
+        {
+            "configuration": "linux-clang-asan-ubsan-jit",
+            "test_suites_passed": 35,
+            "test_suites_failed": 0,
+            "seconds": 124.76,
+            "log_sha256": "79325dc46fbc6ea222ca2783ad13e4c21c318227695ba6cc23cd66c903a366e4",
+            "local_log": "build/foundations-linux-final.log"
+        }
+    ],
+    "dotnet_checks": 235,
+    "normative_rules": 16,
+    "normative_cases": 52,
+    "analysis_assertions": 48909,
+    "conformance_assertions": 11786,
+    "fuzz_smoke": [
+        {
+            "harness": "source",
+            "executions": 1949,
+            "seconds": 31,
+            "requested_seconds": 30
+        },
+        {
+            "harness": "bytecode",
+            "executions": 12398,
+            "seconds": 31,
+            "requested_seconds": 30
+        },
+        {
+            "harness": "module",
+            "executions": 54155,
+            "seconds": 31,
+            "requested_seconds": 30
+        },
+        {
+            "harness": "workspace",
+            "executions": 863,
+            "seconds": 31,
+            "requested_seconds": 30
+        },
+        {
+            "harness": "ir",
+            "executions": 1029,
+            "seconds": 34,
+            "requested_seconds": 30
+        },
+        {
+            "harness": "snapshot",
+            "executions": 40007,
+            "seconds": 31,
+            "requested_seconds": 30
+        }
+    ],
+    "fuzz_log_sha256": "69f7896b3627ab6fc77208bbb4c9f3a228d8e4a0694782cb02120d22888f37d8",
+    "retained_regression": "Presentation/fuzz/corpus/snapshot/invalid-jump-value.mplxir",
+    "benchmark": {
+        "built": true,
+        "workloads": 6,
+        "execution_modes": 5,
+        "new_measurement_executed": false,
+        "reason": "Automatic approval review could not complete due to its service usage limit."
+    },
+    "limits": [
+        "Generated x64 instructions are not instrumented by ASan.",
+        "No macOS or hosted GitHub CI run for this package.",
+        "Smoke fuzzing and conformance do not establish compiler-wide correctness.",
+        "M01-M65 remain partial/planned as recorded in milestones.json."
+    ]
+}
