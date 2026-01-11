@@ -1,0 +1,611 @@
+{
+    "schema_version": 1,
+    "semantics_version": 1,
+    "rules": [
+        {
+            "id": "T01",
+            "normative": "Literals are i64. Unannotated parameters and returns default to i32. Unannotated let infers its initializer type."
+        },
+        {
+            "id": "T02",
+            "normative": "Integer arithmetic is checked at the result width; mixed integer operands promote to i64."
+        },
+        {
+            "id": "T03",
+            "normative": "Signed division truncates toward zero. Remainder has the dividend sign. Zero divisor traps."
+        },
+        {
+            "id": "T04",
+            "normative": "The i64 carrier rejects MIN/-1 for division and remainder. i32 MIN/-1 division traps, but remainder is zero."
+        },
+        {
+            "id": "T05",
+            "normative": "Implicit integer narrowing checks i32 range at assignment, argument and return conversion."
+        },
+        {
+            "id": "T06",
+            "normative": "bool is distinct. Explicit bool(integer) maps nonzero to one; explicit integer(bool) maps to zero or one."
+        },
+        {
+            "id": "E01",
+            "normative": "Operands and call arguments evaluate left to right. Each argument converts before the next argument evaluates."
+        },
+        {
+            "id": "E02",
+            "normative": "Logical operators short-circuit and return bool. Numeric conditions use nonzero truthiness."
+        },
+        {
+            "id": "E03",
+            "normative": "Checked computations and potentially trapping or nonterminating calls remain observable even when their values are unused."
+        },
+        {
+            "id": "E04",
+            "normative": "Arithmetic faults report the source expression or conversion and containing function. Parentheses do not expand an inner expression range."
+        },
+        {
+            "id": "S01",
+            "normative": "Lexical scopes allow shadowing. Initializers resolve before the new binding is installed. Each loop iteration creates its body scope."
+        },
+        {
+            "id": "S02",
+            "normative": "Symbols in one scope are unique. A local binding can hide a callable function."
+        },
+        {
+            "id": "S03",
+            "normative": "Static errors are checked in unreachable source before optimization."
+        },
+        {
+            "id": "F01",
+            "normative": "Missing return produces typed zero. Functions may be called before declaration and may recurse."
+        },
+        {
+            "id": "F02",
+            "normative": "Host arguments must match arity and typed carriers. bool accepts only 0 or 1, i32 only its signed range."
+        },
+        {
+            "id": "P01",
+            "normative": "Operator precedence and associativity follow the scalar v1 grammar."
+        }
+    ],
+    "cases": [
+        {
+            "id": "literal-width",
+            "rule": "T01",
+            "source": "fn main() -> i64 {\n    return 2147483648;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "2147483648"
+            }
+        },
+        {
+            "id": "inferred-let",
+            "rule": "T01",
+            "source": "fn main() -> i64 {\n    let x = 2147483648;\n    return x;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "2147483648"
+            }
+        },
+        {
+            "id": "default-parameter",
+            "rule": "T01",
+            "source": "fn identity(x) -> i64 {\n    return x;\n}\nfn main() -> i64 {\n    return identity(2147483648);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "2147483648"
+            }
+        },
+        {
+            "id": "default-return",
+            "rule": "T01",
+            "source": "fn narrow() {\n    return 2147483649;\n}\nfn main() -> i64 {\n    return narrow();\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "narrow",
+                "fault_expression": "2147483649"
+            }
+        },
+        {
+            "id": "mixed-promotion",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    let x: i32 = 2147483647;\n    return x + 1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "2147483648"
+            }
+        },
+        {
+            "id": "i32-add-overflow",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    let x: i32 = 2147483647;\n    return x + i32(1);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "x + i32(1)"
+            }
+        },
+        {
+            "id": "i64-add-overflow",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    return 9223372036854775807 + 1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "9223372036854775807 + 1"
+            }
+        },
+        {
+            "id": "i64-sub-overflow",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    let minimum = -9223372036854775807 - 1;\n    return minimum - 1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "minimum - 1"
+            }
+        },
+        {
+            "id": "i64-mul-overflow",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    return 3037000500 * 3037000500;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "3037000500 * 3037000500"
+            }
+        },
+        {
+            "id": "i64-neg-overflow",
+            "rule": "T02",
+            "source": "fn main() -> i64 {\n    let minimum = -9223372036854775807 - 1;\n    return -minimum;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "-minimum"
+            }
+        },
+        {
+            "id": "division-sign",
+            "rule": "T03",
+            "source": "fn main() -> i64 {\n    return -17 / 5;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "-3"
+            }
+        },
+        {
+            "id": "remainder-sign",
+            "rule": "T03",
+            "source": "fn main() -> i64 {\n    return -17 % 5;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "-2"
+            }
+        },
+        {
+            "id": "division-zero",
+            "rule": "T03",
+            "source": "fn main() -> i64 {\n    return 1 / 0;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "1 / 0"
+            }
+        },
+        {
+            "id": "remainder-zero",
+            "rule": "T03",
+            "source": "fn main() -> i64 {\n    return 1 % 0;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "1 % 0"
+            }
+        },
+        {
+            "id": "i64-min-div",
+            "rule": "T04",
+            "source": "fn main() -> i64 {\n    let minimum = -9223372036854775807 - 1;\n    return minimum / -1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "minimum / -1"
+            }
+        },
+        {
+            "id": "i64-min-mod",
+            "rule": "T04",
+            "source": "fn main() -> i64 {\n    let minimum = -9223372036854775807 - 1;\n    return minimum % -1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "minimum % -1"
+            }
+        },
+        {
+            "id": "i32-min-div",
+            "rule": "T04",
+            "source": "fn main() -> i64 {\n    let minimum: i32 = -2147483648;\n    return minimum / i32(-1);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "minimum / i32(-1)"
+            }
+        },
+        {
+            "id": "i32-min-mod",
+            "rule": "T04",
+            "source": "fn main() -> i64 {\n    let minimum: i32 = -2147483648;\n    return minimum % i32(-1);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "0"
+            }
+        },
+        {
+            "id": "narrow-assignment",
+            "rule": "T05",
+            "source": "fn main() -> i64 {\n    let x: i32 = 0;\n    x = 2147483648;\n    return x;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "2147483648"
+            }
+        },
+        {
+            "id": "narrow-return",
+            "rule": "T05",
+            "source": "fn main() -> i32 {\n    return 2147483648;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "2147483648"
+            }
+        },
+        {
+            "id": "explicit-narrow",
+            "rule": "T05",
+            "source": "fn main() -> i64 {\n    return i32(2147483648);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "i32(2147483648)"
+            }
+        },
+        {
+            "id": "bool-casts",
+            "rule": "T06",
+            "source": "fn main() -> i64 {\n    return i64(bool(-42)) + i64(false);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "1"
+            }
+        },
+        {
+            "id": "bool-integer-distinct",
+            "rule": "T06",
+            "source": "fn main() -> bool {\n    return true == 1;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "diagnostic",
+                "code": "MPLX2014"
+            }
+        },
+        {
+            "id": "bool-arithmetic",
+            "rule": "T06",
+            "source": "fn main() -> i64 {\n    return true + false;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "diagnostic",
+                "code": "MPLX2014"
+            }
+        },
+        {
+            "id": "left-operand-first",
+            "rule": "E01",
+            "source": "fn main() -> i64 {\n    return (1 / 0) + (9223372036854775807 + 1);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "1 / 0"
+            }
+        },
+        {
+            "id": "convert-argument-first",
+            "rule": "E01",
+            "source": "fn choose(a: i32, b: i64) -> i64 {\n    return b;\n}\nfn main() -> i64 {\n    return choose(2147483648, 1 / 0);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "2147483648"
+            }
+        },
+        {
+            "id": "evaluate-argument-first",
+            "rule": "E01",
+            "source": "fn choose(a: i64, b: i32) -> i64 {\n    return a;\n}\nfn main() -> i64 {\n    return choose(1 / 0, 2147483648);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "1 / 0"
+            }
+        },
+        {
+            "id": "short-circuit-and",
+            "rule": "E02",
+            "source": "fn main() -> bool {\n    return false && bool(1 / 0);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "0"
+            }
+        },
+        {
+            "id": "short-circuit-or",
+            "rule": "E02",
+            "source": "fn main() -> bool {\n    return true || bool(1 / 0);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "1"
+            }
+        },
+        {
+            "id": "numeric-truth",
+            "rule": "E02",
+            "source": "fn main() -> i64 {\n    if (-7) {\n        return 42;\n    }\n    return 0;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "42"
+            }
+        },
+        {
+            "id": "unused-trap",
+            "rule": "E03",
+            "source": "fn main() -> i64 {\n    1 / 0;\n    return 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "1 / 0"
+            }
+        },
+        {
+            "id": "unused-callee-trap",
+            "rule": "E03",
+            "source": "fn fail() -> i64 {\n    return 9 / 0;\n}\nfn main() -> i64 {\n    fail();\n    return 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "fail",
+                "fault_expression": "9 / 0"
+            }
+        },
+        {
+            "id": "unused-total-call",
+            "rule": "E03",
+            "source": "fn identity(x: i64) -> i64 {\n    return x;\n}\nfn main() -> i64 {\n    identity(7);\n    return 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "42"
+            }
+        },
+        {
+            "id": "parenthesized-fault-range",
+            "rule": "E04",
+            "source": "fn main() -> i64 {\n    return (((3 / 0)));\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "main",
+                "fault_expression": "3 / 0"
+            }
+        },
+        {
+            "id": "callee-fault-range",
+            "rule": "E04",
+            "source": "fn fail(x: i64) -> i64 {\n    return 8 / x;\n}\nfn main() -> i64 {\n    return fail(0);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "arithmetic",
+                "function": "fail",
+                "fault_expression": "8 / x"
+            }
+        },
+        {
+            "id": "initializer-shadowing",
+            "rule": "S01",
+            "source": "fn main() -> i64 {\n    let x = 20;\n    if (true) {\n        let x = x + 22;\n        return x;\n    }\n    return x;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "42"
+            }
+        },
+        {
+            "id": "loop-body-scope",
+            "rule": "S01",
+            "source": "fn main() -> i64 {\n    let x = 10;\n    let i = 0;\n    while (i < 4) {\n        let x = x + 1;\n        i = i + 1;\n    }\n    return x;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "10"
+            }
+        },
+        {
+            "id": "duplicate-binding",
+            "rule": "S02",
+            "source": "fn main() -> i64 {\n    let x = 1;\n    let x = 2;\n    return x;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "diagnostic",
+                "code": "MPLX2005"
+            }
+        },
+        {
+            "id": "hidden-function",
+            "rule": "S02",
+            "source": "fn identity() -> i64 {\n    return 42;\n}\nfn main() -> i64 {\n    let identity = 1;\n    return identity();\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "diagnostic",
+                "code": "MPLX2017"
+            }
+        },
+        {
+            "id": "unreachable-error",
+            "rule": "S03",
+            "source": "fn main() -> i64 {\n    if (false) {\n        return missing;\n    }\n    return 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "diagnostic",
+                "code": "MPLX2006"
+            }
+        },
+        {
+            "id": "implicit-return",
+            "rule": "F01",
+            "source": "fn main() -> i64 {\n    let x = 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "0"
+            }
+        },
+        {
+            "id": "implicit-bool-return",
+            "rule": "F01",
+            "source": "fn main() -> bool {\n    let x = true;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "0"
+            }
+        },
+        {
+            "id": "forward-call",
+            "rule": "F01",
+            "source": "fn main() -> i64 {\n    return later();\n}\nfn later() -> i64 {\n    return 42;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "42"
+            }
+        },
+        {
+            "id": "recursive-call",
+            "rule": "F01",
+            "source": "fn triangular(n: i64) -> i64 {\n    if (n == 0) {\n        return 0;\n    }\n    return n + triangular(n - 1);\n}\nfn main() -> i64 {\n    return triangular(10);\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "55"
+            }
+        },
+        {
+            "id": "host-i64",
+            "rule": "F02",
+            "source": "fn main(value: i64) -> i64 {\n    return value;\n}\n",
+            "arguments": ["-9223372036854775808"],
+            "expected": {
+                "kind": "value",
+                "value": "-9223372036854775808"
+            }
+        },
+        {
+            "id": "host-i32-reject",
+            "rule": "F02",
+            "source": "fn main(value: i32) -> i32 {\n    return value;\n}\n",
+            "arguments": ["2147483648"],
+            "expected": {
+                "kind": "invalid-entry"
+            }
+        },
+        {
+            "id": "host-bool-reject",
+            "rule": "F02",
+            "source": "fn main(value: bool) -> bool {\n    return value;\n}\n",
+            "arguments": ["2"],
+            "expected": {
+                "kind": "invalid-entry"
+            }
+        },
+        {
+            "id": "host-arity-reject",
+            "rule": "F02",
+            "source": "fn main(value: i64) -> i64 {\n    return value;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "invalid-entry"
+            }
+        },
+        {
+            "id": "host-bool",
+            "rule": "F02",
+            "source": "fn main(value: bool) -> bool {\n    return value;\n}\n",
+            "arguments": ["1"],
+            "expected": {
+                "kind": "value",
+                "value": "1"
+            }
+        },
+        {
+            "id": "precedence",
+            "rule": "P01",
+            "source": "fn main() -> i64 {\n    return 2 + 3 * 4 - 8 / 2;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "10"
+            }
+        },
+        {
+            "id": "left-associativity",
+            "rule": "P01",
+            "source": "fn main() -> i64 {\n    return 20 - 5 - 3;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "12"
+            }
+        },
+        {
+            "id": "logical-precedence",
+            "rule": "P01",
+            "source": "fn main() -> bool {\n    return true || false && false;\n}\n",
+            "arguments": [],
+            "expected": {
+                "kind": "value",
+                "value": "1"
+            }
+        }
+    ]
+}
