@@ -1,0 +1,547 @@
+{
+    "schema_version": 1,
+    "scope": "50 core milestones + 15 research milestones",
+    "proof_dimensions": ["correctness", "performance", "architecture", "resilience", "reproducibility"],
+    "milestones": [
+        {
+            "id": "M01",
+            "title": "Formal Language Semantics",
+            "depends_on": [],
+            "status": "partial",
+            "implemented": "Scalar semantics v1, 16 machine-readable rules, 52 authored cases and per-pass cross-engine conformance.",
+            "acceptance": "Versioned semantics governs values, first faults, spans, visible effects and resource-policy exceptions; generated conformance covers each supported rule."
+        },
+        {
+            "id": "M02",
+            "title": "Multi-Level Intermediate Representation",
+            "depends_on": ["M01"],
+            "status": "partial",
+            "implemented": "AST, typed CFG, pruned SSA and block-local machine IR; no distinct typed HIR yet.",
+            "acceptance": "Useful HIR/MIR/SSA/machine boundaries carry types, identities and source metadata; each lowering has a verifier and inspectable snapshots."
+        },
+        {
+            "id": "M03",
+            "title": "Advanced Compiler Analysis Framework",
+            "depends_on": ["M02"],
+            "status": "partial",
+            "implemented": "CFG/dominators/frontiers, finite-exit postdominance, SCC/loop forest, phi-aware def-use/liveness and checked analysis preservation. Conservative checked integer intervals with bounded widening.",
+            "acceptance": "Required analyses are bounded, reusable and correctly invalidated; independent graph/dataflow oracles check results."
+        },
+        {
+            "id": "M04",
+            "title": "Effect-Aware Optimization Semantics",
+            "depends_on": ["M01", "M02", "M03"],
+            "status": "partial",
+            "implemented": "Transitive scalar call effects, trap/divergence summaries, conservative recursion/cycles and removal of unused proven-total calls. Integer range proofs authorize safe checked arithmetic removal.",
+            "acceptance": "Elimination and motion preserve memory/host effects, trap order and documented fuel policy with explicit function summaries."
+        },
+        {
+            "id": "M05",
+            "title": "Hardened IR & Bytecode Verification",
+            "depends_on": ["M01", "M02"],
+            "status": "partial",
+            "implemented": "IR/bytecode verification, canonical bounded portable modules, hardened IR snapshot reader and sixth fuzzer.",
+            "acceptance": "Malformed IR, bytecode, regions, references and sizes fail validation before execution across mutation/fuzz suites."
+        },
+        {
+            "id": "M06",
+            "title": "Transactional Optimization Pipeline",
+            "depends_on": ["M02", "M03", "M05"],
+            "status": "partial",
+            "implemented": "Per-pass candidate transactions, canonical snapshots, fingerprints, structural diffs, failure records and isolated production-pass replay.",
+            "acceptance": "Every failed transformation has verified input, candidate, structural changes, isolated replay and an automatically minimized reproducer."
+        },
+        {
+            "id": "M07",
+            "title": "Strings, Arrays & Memory-Safe Collections",
+            "depends_on": ["M01", "M02", "M05"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "UTF-8 strings, checked mutable/immutable arrays and views agree across AST/VM/JIT, with explicit aliasing, lifetime and allocation failure semantics."
+        },
+        {
+            "id": "M08",
+            "title": "Structs, Tuples & Algebraic Data Types",
+            "depends_on": ["M07"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Structures, tuples and ADTs have verified layout/alignment/initialization rules and a documented calling ABI."
+        },
+        {
+            "id": "M09",
+            "title": "Advanced Type System & Generics",
+            "depends_on": ["M08", "M13"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Constraints and monomorphization are bounded, deterministic and cached; cyclic instantiation has actionable diagnostics."
+        },
+        {
+            "id": "M10",
+            "title": "Pattern Matching & Exhaustiveness Checking",
+            "depends_on": ["M08"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Pattern matching checks exhaustiveness and unreachable arms and lowers to verified decision trees."
+        },
+        {
+            "id": "M11",
+            "title": "Closures & First-Class Functions",
+            "depends_on": ["M08", "M24"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Closures preserve capture/escape/lifetime semantics across frames, heap and all supported execution engines."
+        },
+        {
+            "id": "M12",
+            "title": "Structured Error & Exception Model",
+            "depends_on": ["M08"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Result propagation and cleanup execute exactly once; language errors remain separate from runtime failures."
+        },
+        {
+            "id": "M13",
+            "title": "Modules, Packages & Visibility",
+            "depends_on": ["M01", "M02"],
+            "status": "partial",
+            "implemented": "Root-confined imports, export visibility, dependency DAG, overlays and exact in-memory file/interface caching.",
+            "acceptance": "Reexports, visibility, interface changes, cycles and API compatibility drive correct incremental package compilation."
+        },
+        {
+            "id": "M14",
+            "title": "Async Functions & Coroutine Lowering",
+            "depends_on": ["M11", "M12", "M24", "M25", "M30"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Await lowers to coroutine states with bounded scheduling, cancellation, reentrancy and exactly-once cleanup."
+        },
+        {
+            "id": "M15",
+            "title": "Memory SSA & Advanced Alias Analysis",
+            "depends_on": ["M03", "M04", "M07", "M24"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Memory SSA and alias summaries preserve heap reads/writes across CFG and unknown calls."
+        },
+        {
+            "id": "M16",
+            "title": "Global Value Numbering & Partial Redundancy Elimination",
+            "depends_on": ["M03", "M04", "M15"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "GVN/PRE/DSE/jump threading/range-based simplification preserve checked traps and show measured effects."
+        },
+        {
+            "id": "M17",
+            "title": "Advanced Loop Optimization",
+            "depends_on": ["M16"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Loop canonicalization, LICM and induction/bounds optimizations have explicit safety proofs and regression programs."
+        },
+        {
+            "id": "M18",
+            "title": "Interprocedural Optimization",
+            "depends_on": ["M03", "M04", "M13", "M16"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Inlining/specialization and call-graph optimization preserve effects and resource policy under code-size budgets."
+        },
+        {
+            "id": "M19",
+            "title": "Instruction Selection & Scheduling",
+            "depends_on": ["M02", "M05"],
+            "status": "partial",
+            "implemented": "Own x64 emitter and verified block-local machine IR; no general target description/legalizer.",
+            "acceptance": "Target descriptions, legalization and instruction selection express register/ABI constraints without hardcoded frontend assumptions."
+        },
+        {
+            "id": "M20",
+            "title": "Global Register Allocation",
+            "depends_on": ["M03", "M19"],
+            "status": "partial",
+            "implemented": "Basic-block R8-R11 cache with next-use spilling and copy coalescing; no global allocation.",
+            "acceptance": "Global linear scan and graph coloring handle liveness, parallel copies, spill costs and both x64 ABIs under register pressure."
+        },
+        {
+            "id": "M21",
+            "title": "Vectorization & SIMD",
+            "depends_on": ["M07", "M15", "M17", "M19", "M20"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Vectorization is enabled only under proved dependency/checked-arithmetic conditions; ISA-specific results are benchmarked."
+        },
+        {
+            "id": "M22",
+            "title": "Profile-Guided Optimization",
+            "depends_on": ["M19", "M20"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Profiles bind to exact build fingerprints and guide reproducible placement/specialization/inlining with measured overhead."
+        },
+        {
+            "id": "M23",
+            "title": "Link-Time & Whole-Program Optimization",
+            "depends_on": ["M13", "M18", "M33"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Whole-program summaries and linker-visible symbols support verified intermodule optimization without loading every body."
+        },
+        {
+            "id": "M24",
+            "title": "Managed Heap & Garbage Collector",
+            "depends_on": ["M07", "M08"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "A traced managed heap supports roots, stable handles, baseline collection, moving collection and later generations/barriers with stress tests."
+        },
+        {
+            "id": "M25",
+            "title": "Safepoints, Stack Maps & Runtime Coordination",
+            "depends_on": ["M20", "M24"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Safepoints and stack/register maps identify every live reference across nested calls, GC, cancellation and tier transitions."
+        },
+        {
+            "id": "M26",
+            "title": "Tiered JIT & Adaptive Compilation",
+            "depends_on": ["M18", "M20", "M22", "M25"],
+            "status": "partial",
+            "implemented": "VM and x64 JIT with a hotness threshold; no optimizing tier, deoptimization or OSR.",
+            "acceptance": "Baseline/optimizing tiers, guarded assumptions, OSR and deoptimization restore correct logical execution state."
+        },
+        {
+            "id": "M27",
+            "title": "Enterprise-Grade FFI & Embedding",
+            "depends_on": ["M07", "M08", "M24", "M25"],
+            "status": "partial",
+            "implemented": "One-way typed C/C++ and .NET embedding with reusable bounded contexts; no registered host callbacks.",
+            "acceptance": "Bidirectional typed callbacks safely marshal objects and lifetimes with reentrancy, thread attachment and capabilities."
+        },
+        {
+            "id": "M28",
+            "title": "Sandboxed Execution & Secure JIT",
+            "depends_on": ["M05", "M24", "M27"],
+            "status": "partial",
+            "implemented": "Bytecode verification, execution budgets and W^X; no isolated worker process.",
+            "acceptance": "Threat model distinguishes in-process JIT from process isolation; all exposed budgets and capability boundaries are tested."
+        },
+        {
+            "id": "M29",
+            "title": "Bytecode Format 2.0 & Compatibility",
+            "depends_on": ["M02", "M05", "M07", "M08", "M13"],
+            "status": "partial",
+            "implemented": "Canonical MPLXB 1.0 scalar format and compatibility checks; format 2.0 is future work.",
+            "acceptance": "Versioned type/constant/symbol/import/debug/relocation sections have canonical bounded encoding and explicit compatibility policy."
+        },
+        {
+            "id": "M30",
+            "title": "Concurrency Runtime & Memory Model",
+            "depends_on": ["M24", "M25", "M27"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Isolated tasks, cancellation, channels/backpressure and documented memory ordering pass deterministic concurrency and race tests."
+        },
+        {
+            "id": "M31",
+            "title": "Demand-Driven Compiler Query Engine",
+            "depends_on": ["M02", "M13"],
+            "status": "partial",
+            "implemented": "Exact file/interface memoization in workspace compilation; not a general compiler query graph.",
+            "acceptance": "Demand queries record dependencies, diagnose cycles and explain function-level red/green invalidation."
+        },
+        {
+            "id": "M32",
+            "title": "Persistent Content-Addressable Compiler Cache",
+            "depends_on": ["M31"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Persistent content-addressed artifacts survive corruption and concurrent processes using complete version/ABI/target keys and atomic writes."
+        },
+        {
+            "id": "M33",
+            "title": "Object Modules, Relocations & Linking",
+            "depends_on": ["M13", "M29"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Separately compiled object modules link reproducibly with symbol conflicts, imports/exports and relocation bounds checked."
+        },
+        {
+            "id": "M34",
+            "title": "Parallel & Incremental Compilation",
+            "depends_on": ["M31", "M32", "M33"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Worker counts 1/2/4/8/16 produce identical artifacts with bounded memory and cancellation-safe scheduling."
+        },
+        {
+            "id": "M35",
+            "title": "Advanced Language Server 2.0",
+            "depends_on": ["M31", "M34"],
+            "status": "partial",
+            "implemented": "Compiler-backed semantic LSP with cross-file definitions/references/rename and workspace overlays.",
+            "acceptance": "Error-tolerant incremental snapshots support unfinished code, hierarchy/actions/hints and stale-request cancellation."
+        },
+        {
+            "id": "M36",
+            "title": "Native Debugger & Debug Adapter Protocol",
+            "depends_on": ["M20", "M25", "M35"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "DAP stepping, breakpoints, stack/locals/watches and source mapping report unavailable optimized values honestly."
+        },
+        {
+            "id": "M37",
+            "title": "Ahead-of-Time Native Compiler",
+            "depends_on": ["M19", "M20", "M29", "M33"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Own AOT output links into runnable PE/ELF programs with explicit startup/runtime inclusion and ABI tests."
+        },
+        {
+            "id": "M38",
+            "title": "AArch64 Backend",
+            "depends_on": ["M19", "M20", "M37"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Own AArch64 lowering, AAPCS64 calls and relocations execute on hardware or a documented emulator."
+        },
+        {
+            "id": "M39",
+            "title": "WebAssembly Backend",
+            "depends_on": ["M02", "M19", "M29"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Wasm lowering preserves checked arithmetic, control flow, memory and runtime failures under a documented host ABI."
+        },
+        {
+            "id": "M40",
+            "title": "Cross-Language SDK & Runtime ABI",
+            "depends_on": ["M27", "M29"],
+            "status": "partial",
+            "implemented": "Versioned C ABI v1, C++ program API and .NET SafeHandle SDK; object/async ABI remains open.",
+            "acceptance": "C/C++, .NET and implemented Wasm hosts share versioned object/error/lifecycle/async contracts."
+        },
+        {
+            "id": "M41",
+            "title": "Package Manager & Reproducible Builds",
+            "depends_on": ["M13", "M29", "M32", "M33"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Package resolution, lockfiles, integrity and local dependencies produce reproducible builds with controlled scripts."
+        },
+        {
+            "id": "M42",
+            "title": "Standard Library & Language Toolchain",
+            "depends_on": ["M07", "M08", "M09", "M10", "M11", "M12", "M14", "M40", "M41"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Collections/Unicode/Result/iterators/serialization/async tools include substantial MPLX implementations and real tests."
+        },
+        {
+            "id": "M43",
+            "title": "Multi-Engine Differential Execution",
+            "depends_on": ["M01", "M05"],
+            "status": "partial",
+            "implemented": "Independent AST, raw/SSA VM, arena/register native comparisons, intermediate-pass conformance and module tests.",
+            "acceptance": "Every implemented backend shares one outcome/effect corpus; backend-specific resource-policy differences are explicit."
+        },
+        {
+            "id": "M44",
+            "title": "Grammar-Based & Metamorphic Fuzzing",
+            "depends_on": ["M01", "M05", "M43"],
+            "status": "partial",
+            "implemented": "Six coverage-guided harnesses, deterministic mutation corpora and scalar metamorphic tests; no general grammar generator/reducer.",
+            "acceptance": "Typed grammar generation, semantic metamorphisms and automatic reduction produce small retained disagreement regressions."
+        },
+        {
+            "id": "M45",
+            "title": "SMT-Based Translation Validation",
+            "depends_on": ["M04", "M16", "M43"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "SMT validation proves or produces counterexamples for a clearly delimited checked-integer CFG subset."
+        },
+        {
+            "id": "M46",
+            "title": "Formal Models of Runtime Invariants",
+            "depends_on": ["M24", "M25", "M30"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Formal and executable models cover GC reachability, tier state restoration, coroutine races, cleanup and cache invalidation."
+        },
+        {
+            "id": "M47",
+            "title": "Performance & Reliability Research Laboratory",
+            "depends_on": ["M01", "M43", "M44"],
+            "status": "partial",
+            "implemented": "Windows/Linux checks, sanitizers, retained compiler benchmarks, ABI/concurrency tests and CI matrices.",
+            "acceptance": "Latency, execution, memory, code size, reliability and platform measurements are reproducible and tied to exact inputs/builds."
+        },
+        {
+            "id": "M48",
+            "title": "Interactive Compiler Explorer",
+            "depends_on": ["M02", "M03", "M06", "M20"],
+            "status": "partial",
+            "implemented": "Real IR/machine/analysis dumps and optimization trace artifacts; no interactive explorer UI.",
+            "acceptance": "An interactive explorer renders actual pipeline snapshots, pass diffs, graphs and allocation without reimplementing compilation in the UI."
+        },
+        {
+            "id": "M49",
+            "title": "Runtime Profiler & Execution Time Machine",
+            "depends_on": ["M25", "M26", "M36"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Profiler events correlate calls, allocation, GC and tier activity; supported deterministic replay states its limits."
+        },
+        {
+            "id": "M50",
+            "title": "Ultimate Compiler Engineering Showcase",
+            "depends_on": [
+                "M09",
+                "M14",
+                "M21",
+                "M23",
+                "M26",
+                "M30",
+                "M35",
+                "M36",
+                "M37",
+                "M38",
+                "M39",
+                "M40",
+                "M41",
+                "M42",
+                "M45",
+                "M46",
+                "M47",
+                "M48",
+                "M49"
+            ],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Real multipackage programs exercise composite types, generics, concurrency, FFI and multiple targets with published correctness/performance evidence."
+        },
+        {
+            "id": "M51",
+            "title": "Self-Hosting Compiler",
+            "depends_on": ["M42", "M50"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Self-Hosting Compiler."
+        },
+        {
+            "id": "M52",
+            "title": "Concurrent / Incremental GC",
+            "depends_on": ["M24", "M25", "M30", "M46"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Concurrent / Incremental GC."
+        },
+        {
+            "id": "M53",
+            "title": "Advanced Escape & Region Analysis",
+            "depends_on": ["M03", "M07", "M15", "M24"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Advanced Escape & Region Analysis."
+        },
+        {
+            "id": "M54",
+            "title": "Superoptimization Research",
+            "depends_on": ["M19", "M20", "M45"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Superoptimization Research."
+        },
+        {
+            "id": "M55",
+            "title": "Equality Saturation Optimizer",
+            "depends_on": ["M16", "M45"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Equality Saturation Optimizer."
+        },
+        {
+            "id": "M56",
+            "title": "Whole-Program Static Analyzer",
+            "depends_on": ["M03", "M04", "M13", "M15"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Whole-Program Static Analyzer."
+        },
+        {
+            "id": "M57",
+            "title": "Effect System",
+            "depends_on": ["M04", "M27"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Effect System."
+        },
+        {
+            "id": "M58",
+            "title": "Ownership & Borrowing Experiment",
+            "depends_on": ["M07", "M08", "M11", "M53"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Ownership & Borrowing Experiment."
+        },
+        {
+            "id": "M59",
+            "title": "WebAssembly Component Model",
+            "depends_on": ["M39", "M40"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: WebAssembly Component Model."
+        },
+        {
+            "id": "M60",
+            "title": "Distributed Compilation",
+            "depends_on": ["M32", "M33", "M34", "M41"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Distributed Compilation."
+        },
+        {
+            "id": "M61",
+            "title": "Auto-Tuning Optimization Pipeline",
+            "depends_on": ["M06", "M22", "M47"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Auto-Tuning Optimization Pipeline."
+        },
+        {
+            "id": "M62",
+            "title": "CPU-Specific Code Generation",
+            "depends_on": ["M19", "M20", "M21", "M22"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: CPU-Specific Code Generation."
+        },
+        {
+            "id": "M63",
+            "title": "Structured Concurrency Verification",
+            "depends_on": ["M14", "M30", "M46"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Structured Concurrency Verification."
+        },
+        {
+            "id": "M64",
+            "title": "Compiler Plugin Architecture",
+            "depends_on": ["M02", "M03", "M05", "M06"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Compiler Plugin Architecture."
+        },
+        {
+            "id": "M65",
+            "title": "Self-Hosted Standard Library & Toolchain",
+            "depends_on": ["M42", "M51"],
+            "status": "planned",
+            "implemented": "",
+            "acceptance": "Independent research milestone with declared scope, reproducible prototype, correctness checks and measured limitations: Self-Hosted Standard Library & Toolchain."
+        }
+    ]
+}
